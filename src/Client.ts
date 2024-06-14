@@ -50,7 +50,7 @@ export class VoyageApiClient {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "",
-                "X-Fern-SDK-Version": "0.0.1",
+                "X-Fern-SDK-Version": "0.0.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -118,7 +118,7 @@ export class VoyageApiClient {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "",
-                "X-Fern-SDK-Version": "0.0.1",
+                "X-Fern-SDK-Version": "0.0.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -162,6 +162,6 @@ export class VoyageApiClient {
 
     protected async _getCustomAuthorizationHeaders() {
         const apiKeyValue = await core.Supplier.get(this._options.apiKey);
-        return { "Authorization: Bearer": apiKeyValue };
+        return { Bearer_Authorization: apiKeyValue };
     }
 }
