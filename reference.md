@@ -1,6 +1,6 @@
 ## Embeddings
 
-<details><summary> <code>voyageApi.<a href="./src/Client.ts">embed</a>({ ...params }) -> VoyageApi.EmbedResponse</code> </summary>
+<details><summary> <code>voyage.<a href="./src/Client.ts">embed</a>({ ...params }) -> Voyage.EmbedResponse</code> </summary>
 
 <dl>
 
@@ -37,7 +37,7 @@ Voyage embedding endpoint receives as input a string (or a list of strings) and 
 <dd>
 
 ```ts
-await voyageApi.embed({
+await voyage.embed({
     input: "input",
     model: "model",
 });
@@ -61,7 +61,7 @@ await voyageApi.embed({
 
 <dd>
 
-**request: `VoyageApi.EmbedRequest`**
+**request: `Voyage.EmbedRequest`**
 
 </dd>
 
@@ -71,7 +71,7 @@ await voyageApi.embed({
 
 <dd>
 
-**requestOptions: `VoyageApiClient.RequestOptions`**
+**requestOptions: `VoyageClient.RequestOptions`**
 
 </dd>
 
@@ -88,7 +88,7 @@ await voyageApi.embed({
 
 ## Reranker
 
-<details><summary> <code>voyageApi.<a href="./src/Client.ts">rerank</a>({ ...params }) -> VoyageApi.RerankResponse</code> </summary>
+<details><summary> <code>voyage.<a href="./src/Client.ts">rerank</a>({ ...params }) -> Voyage.RerankResponse</code> </summary>
 
 <dl>
 
@@ -125,7 +125,7 @@ Voyage reranker endpoint receives as input a query, a list of documents, and oth
 <dd>
 
 ```ts
-await voyageApi.rerank({
+await voyage.rerank({
     query: "query",
     documents: ["documents"],
     model: "model",
@@ -150,7 +150,7 @@ await voyageApi.rerank({
 
 <dd>
 
-**request: `VoyageApi.RerankRequest`**
+**request: `Voyage.RerankRequest`**
 
 </dd>
 
@@ -160,7 +160,7 @@ await voyageApi.rerank({
 
 <dd>
 
-**requestOptions: `VoyageApiClient.RequestOptions`**
+**requestOptions: `VoyageClient.RequestOptions`**
 
 </dd>
 

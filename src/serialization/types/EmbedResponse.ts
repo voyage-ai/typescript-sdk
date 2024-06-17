@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../index";
-import * as VoyageApi from "../../api/index";
+import * as Voyage from "../../api/index";
 import * as core from "../../core";
 import { EmbedResponseDataItem } from "./EmbedResponseDataItem";
 import { EmbedResponseUsage } from "./EmbedResponseUsage";
 
-export const EmbedResponse: core.serialization.ObjectSchema<serializers.EmbedResponse.Raw, VoyageApi.EmbedResponse> =
+export const EmbedResponse: core.serialization.ObjectSchema<serializers.EmbedResponse.Raw, Voyage.EmbedResponse> =
     core.serialization.object({
         object: core.serialization.string().optional(),
         data: core.serialization.list(EmbedResponseDataItem).optional(),

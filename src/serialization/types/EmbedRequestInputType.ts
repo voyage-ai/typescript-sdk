@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../index";
-import * as VoyageApi from "../../api/index";
+import * as Voyage from "../../api/index";
 import * as core from "../../core";
 
 export const EmbedRequestInputType: core.serialization.Schema<
     serializers.EmbedRequestInputType.Raw,
-    VoyageApi.EmbedRequestInputType
+    Voyage.EmbedRequestInputType
 > = core.serialization.enum_(["query", "document"]);
 
 export declare namespace EmbedRequestInputType {

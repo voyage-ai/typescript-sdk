@@ -16,10 +16,10 @@ npm i -s
 Instantiate and use the client with the following:
 
 ```typescript
-import { VoyageApiClient } from "";
+import { VoyageClient } from "";
 
-const voyageApi = new VoyageApiClient({ apiKey: "YOUR_API_KEY" });
-await voyageApi.embed({
+const voyage = new VoyageClient({ apiKey: "YOUR_API_KEY" });
+await voyage.embed({
     input: "input",
     model: "model",
 });
@@ -31,12 +31,12 @@ The SDK exports all request and response types as TypeScript interfaces. Simply 
 following namespace:
 
 ```typescript
-import { VoyageApi } from "";
+import { Voyage } from "";
 
-const request: VoyageApi.EmbedRequest = {
+const request: Voyage.EmbedRequest = {
     ...
 };
-const response = await voyageApi.embed(request);
+const response = await voyage.embed(request);
 ```
 
 ## Exception Handling
@@ -45,12 +45,12 @@ When the API returns a non-success status code (4xx or 5xx response), a subclass
 will be thrown.
 
 ```typescript
-import { VoyageApiError } from '';
+import { VoyageError } from '';
 
 try {
-    await voyageApi.embed(...);
+    await voyage.embed(...);
 } catch (err) {
-    if (err instanceof VoyageApiError) {
+    if (err instanceof VoyageError) {
         console.log(err.statusCode);
         console.log(err.message);
         console.log(err.body);
@@ -73,7 +73,7 @@ A request is deemed retriable when any of the following HTTP status codes is ret
 Use the `maxRetries` request option to configure this behavior.
 
 ```typescript
-const response = await voyageApi.embed(..., {
+const response = await voyage.embed(..., {
     maxRetries: 0 // override maxRetries at the request level
 });
 ```
@@ -83,7 +83,7 @@ const response = await voyageApi.embed(..., {
 The SDK defaults to a 60 second timeout. Use the `timeoutInSeconds` option to configure this behavior.
 
 ```typescript
-const response = await voyageApi.embed(..., {
+const response = await voyage.embed(..., {
     timeoutInSeconds: 30 // override timeout to 30s
 });
 ```
@@ -94,7 +94,7 @@ The SDK allows users to abort requests at any point by passing in an abort signa
 
 ```typescript
 const controller = new AbortController();
-const response = await voyageApi.embed(..., {
+const response = await voyage.embed(..., {
     abortSignal: controller.signal
 });
 controller.abort(); // aborts the request
@@ -118,9 +118,9 @@ The SDK provides a way for your to customize the underlying HTTP client / Fetch 
 unsupported environment, this provides a way for you to break glass and ensure the SDK works.
 
 ```typescript
-import { VoyageApiClient } from '';
+import { VoyageClient } from '';
 
-const voyageApi = new VoyageApiClient({
+const voyage = new VoyageClient({
     ...
     fetcher: // provide your implementation here
 });

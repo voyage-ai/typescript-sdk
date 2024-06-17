@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../index";
-import * as VoyageApi from "../../api/index";
+import * as Voyage from "../../api/index";
 import * as core from "../../core";
 
 export const RerankResponseUsage: core.serialization.ObjectSchema<
     serializers.RerankResponseUsage.Raw,
-    VoyageApi.RerankResponseUsage
+    Voyage.RerankResponseUsage
 > = core.serialization.object({
     totalTokens: core.serialization.property("total_tokens", core.serialization.number().optional()),
 });

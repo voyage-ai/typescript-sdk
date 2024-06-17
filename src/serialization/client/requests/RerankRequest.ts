@@ -3,10 +3,10 @@
  */
 
 import * as serializers from "../../index";
-import * as VoyageApi from "../../../api/index";
+import * as Voyage from "../../../api/index";
 import * as core from "../../../core";
 
-export const RerankRequest: core.serialization.Schema<serializers.RerankRequest.Raw, VoyageApi.RerankRequest> =
+export const RerankRequest: core.serialization.Schema<serializers.RerankRequest.Raw, Voyage.RerankRequest> =
     core.serialization.object({
         query: core.serialization.string(),
         documents: core.serialization.list(core.serialization.string()),

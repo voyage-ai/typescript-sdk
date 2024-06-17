@@ -4,15 +4,16 @@
 
 import * as environments from "./environments";
 import * as core from "./core";
-import * as VoyageApi from "./api/index";
+import * as Voyage from "./api/index";
 import * as serializers from "./serialization/index";
 import urlJoin from "url-join";
 import * as errors from "./errors/index";
 
-export declare namespace VoyageApiClient {
+export declare namespace VoyageClient {
     interface Options {
-        environment?: core.Supplier<environments.VoyageApiEnvironment | string>;
+        environment?: core.Supplier<environments.VoyageEnvironment | string>;
         apiKey: core.Supplier<string>;
+        fetcher?: core.FetchFunction;
     }
 
     interface RequestOptions {
@@ -22,35 +23,35 @@ export declare namespace VoyageApiClient {
     }
 }
 
-export class VoyageApiClient {
-    constructor(protected readonly _options: VoyageApiClient.Options) {}
+export class VoyageClient {
+    constructor(protected readonly _options: VoyageClient.Options) {}
 
     /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
      *
-     * @param {VoyageApi.EmbedRequest} request
-     * @param {VoyageApiClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {Voyage.EmbedRequest} request
+     * @param {VoyageClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
-     *     await voyageApi.embed({
+     *     await voyage.embed({
      *         input: "input",
      *         model: "model"
      *     })
      */
     public async embed(
-        request: VoyageApi.EmbedRequest,
-        requestOptions?: VoyageApiClient.RequestOptions
-    ): Promise<VoyageApi.EmbedResponse> {
-        const _response = await core.fetcher({
+        request: Voyage.EmbedRequest,
+        requestOptions?: VoyageClient.RequestOptions
+    ): Promise<Voyage.EmbedResponse> {
+        const _response = await (this._options.fetcher ?? core.fetcher)({
             url: urlJoin(
-                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageApiEnvironment.Default,
+                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageEnvironment.Default,
                 "embeddings"
             ),
             method: "POST",
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "",
-                "X-Fern-SDK-Version": "0.0.2",
+                "X-Fern-SDK-Version": "0.0.4",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -66,12 +67,13 @@ export class VoyageApiClient {
                 unrecognizedObjectKeys: "passthrough",
                 allowUnrecognizedUnionMembers: true,
                 allowUnrecognizedEnumValues: true,
+                skipValidation: true,
                 breadcrumbsPrefix: ["response"],
             });
         }
 
         if (_response.error.reason === "status-code") {
-            throw new errors.VoyageApiError({
+            throw new errors.VoyageError({
                 statusCode: _response.error.statusCode,
                 body: _response.error.body,
             });
@@ -79,14 +81,14 @@ export class VoyageApiClient {
 
         switch (_response.error.reason) {
             case "non-json":
-                throw new errors.VoyageApiError({
+                throw new errors.VoyageError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.rawBody,
                 });
             case "timeout":
-                throw new errors.VoyageApiTimeoutError();
+                throw new errors.VoyageTimeoutError();
             case "unknown":
-                throw new errors.VoyageApiError({
+                throw new errors.VoyageError({
                     message: _response.error.errorMessage,
                 });
         }
@@ -95,30 +97,30 @@ export class VoyageApiClient {
     /**
      * Voyage reranker endpoint receives as input a query, a list of documents, and other arguments such as the model name, and returns a response containing the reranking results.
      *
-     * @param {VoyageApi.RerankRequest} request
-     * @param {VoyageApiClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {Voyage.RerankRequest} request
+     * @param {VoyageClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
-     *     await voyageApi.rerank({
+     *     await voyage.rerank({
      *         query: "query",
      *         documents: ["documents"],
      *         model: "model"
      *     })
      */
     public async rerank(
-        request: VoyageApi.RerankRequest,
-        requestOptions?: VoyageApiClient.RequestOptions
-    ): Promise<VoyageApi.RerankResponse> {
-        const _response = await core.fetcher({
+        request: Voyage.RerankRequest,
+        requestOptions?: VoyageClient.RequestOptions
+    ): Promise<Voyage.RerankResponse> {
+        const _response = await (this._options.fetcher ?? core.fetcher)({
             url: urlJoin(
-                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageApiEnvironment.Default,
+                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageEnvironment.Default,
                 "rerank"
             ),
             method: "POST",
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "",
-                "X-Fern-SDK-Version": "0.0.2",
+                "X-Fern-SDK-Version": "0.0.4",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -134,12 +136,13 @@ export class VoyageApiClient {
                 unrecognizedObjectKeys: "passthrough",
                 allowUnrecognizedUnionMembers: true,
                 allowUnrecognizedEnumValues: true,
+                skipValidation: true,
                 breadcrumbsPrefix: ["response"],
             });
         }
 
         if (_response.error.reason === "status-code") {
-            throw new errors.VoyageApiError({
+            throw new errors.VoyageError({
                 statusCode: _response.error.statusCode,
                 body: _response.error.body,
             });
@@ -147,14 +150,14 @@ export class VoyageApiClient {
 
         switch (_response.error.reason) {
             case "non-json":
-                throw new errors.VoyageApiError({
+                throw new errors.VoyageError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.rawBody,
                 });
             case "timeout":
-                throw new errors.VoyageApiTimeoutError();
+                throw new errors.VoyageTimeoutError();
             case "unknown":
-                throw new errors.VoyageApiError({
+                throw new errors.VoyageError({
                     message: _response.error.errorMessage,
                 });
         }
