@@ -1,6 +1,6 @@
 {
-    "name": "",
-    "version": "0.0.7",
+    "name": "voyageai",
+    "version": "0.0.8",
     "private": false,
     "repository": "https://github.com/fern-demo/voyage-typescript-sdk",
     "main": "./index.js",
