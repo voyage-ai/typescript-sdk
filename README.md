@@ -1,14 +1,13 @@
 # Voyage TypeScript Library
 
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-SDK%20generated%20by%20Fern-brightgreen)](https://github.com/fern-api/fern)
-[![npm shield](https://img.shields.io/npm/v/)](https://www.npmjs.com/package/)
 
 The Voyage TypeScript library provides convenient access to the Voyage API from TypeScript.
 
 ## Installation
 
 ```sh
-npm i -s
+npm i -s voyageai
 ```
 
 ## Usage
@@ -16,7 +15,7 @@ npm i -s
 Instantiate and use the client with the following:
 
 ```typescript
-import { VoyageAIClient } from "";
+import { VoyageAIClient } from "voyageai";
 
 const voyageAi = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
 await voyageAi.embed({
@@ -31,7 +30,7 @@ The SDK exports all request and response types as TypeScript interfaces. Simply 
 following namespace:
 
 ```typescript
-import { VoyageAI } from "";
+import { VoyageAI } from "voyageai";
 
 const request: VoyageAI.EmbedRequest = {
     ...
@@ -45,7 +44,7 @@ When the API returns a non-success status code (4xx or 5xx response), a subclass
 will be thrown.
 
 ```typescript
-import { VoyageAIError } from '';
+import { VoyageAIError } from "voyageai";
 
 try {
     await voyageAi.embed(...);
@@ -118,7 +117,7 @@ The SDK provides a way for your to customize the underlying HTTP client / Fetch 
 unsupported environment, this provides a way for you to break glass and ensure the SDK works.
 
 ```typescript
-import { VoyageAIClient } from '';
+import { VoyageAIClient } from "voyageai";
 
 const voyageAi = new VoyageAIClient({
     ...
