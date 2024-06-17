@@ -3,6 +3,6 @@
  */
 
 /**
- * A single text string, or a list of texts as a list of strings. Currently, we have two constraints on the list: <ul> <li> <p> The maximum length of the list is 128. </p> </li> <li> <p> The total number of tokens in the list is at most 320K for `voyage-2`, and 120K for `voyage-large-2`, `voyage-finance-2`, `voyage-multilingual-2`, `voyage-law-2`, and `voyage-code-2`. </p> </li> <ul>
+ * A single text string, or a list of texts as a list of strings. Currently, we have two constraints on the list: <ul> <li> The maximum length of the list is 128. </li> <li> The total number of tokens in the list is at most 320K for `voyage-2`, and 120K for `voyage-large-2`, `voyage-finance-2`, `voyage-multilingual-2`, `voyage-law-2`, and `voyage-code-2`. </li> <ul>
  */
 export type EmbedRequestInput = string | string[];
