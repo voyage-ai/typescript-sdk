@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../../index";
-import * as Voyage from "../../../api/index";
+import * as VoyageAI from "../../../api/index";
 import * as core from "../../../core";
 import { EmbedRequestInput } from "../../types/EmbedRequestInput";
 import { EmbedRequestInputType } from "../../types/EmbedRequestInputType";
 
-export const EmbedRequest: core.serialization.Schema<serializers.EmbedRequest.Raw, Voyage.EmbedRequest> =
+export const EmbedRequest: core.serialization.Schema<serializers.EmbedRequest.Raw, VoyageAI.EmbedRequest> =
     core.serialization.object({
         input: EmbedRequestInput,
         model: core.serialization.string(),

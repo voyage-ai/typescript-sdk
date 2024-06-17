@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../index";
-import * as Voyage from "../../api/index";
+import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
 
 export const EmbedResponseUsage: core.serialization.ObjectSchema<
     serializers.EmbedResponseUsage.Raw,
-    Voyage.EmbedResponseUsage
+    VoyageAI.EmbedResponseUsage
 > = core.serialization.object({
     totalTokens: core.serialization.property("total_tokens", core.serialization.number().optional()),
 });

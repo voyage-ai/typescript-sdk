@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../index";
-import * as Voyage from "../../api/index";
+import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
 import { RerankResponseDataItem } from "./RerankResponseDataItem";
 import { RerankResponseUsage } from "./RerankResponseUsage";
 
-export const RerankResponse: core.serialization.ObjectSchema<serializers.RerankResponse.Raw, Voyage.RerankResponse> =
+export const RerankResponse: core.serialization.ObjectSchema<serializers.RerankResponse.Raw, VoyageAI.RerankResponse> =
     core.serialization.object({
         object: core.serialization.string().optional(),
         data: core.serialization.list(RerankResponseDataItem).optional(),

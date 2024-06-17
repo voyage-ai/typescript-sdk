@@ -1,2 +1,2 @@
-export { VoyageError } from "./VoyageError";
-export { VoyageTimeoutError } from "./VoyageTimeoutError";
+export { VoyageAIError } from "./VoyageAIError";
+export { VoyageAITimeoutError } from "./VoyageAITimeoutError";

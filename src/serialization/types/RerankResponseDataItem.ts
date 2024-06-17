@@ -3,12 +3,12 @@
  */
 
 import * as serializers from "../index";
-import * as Voyage from "../../api/index";
+import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
 
 export const RerankResponseDataItem: core.serialization.ObjectSchema<
     serializers.RerankResponseDataItem.Raw,
-    Voyage.RerankResponseDataItem
+    VoyageAI.RerankResponseDataItem
 > = core.serialization.object({
     index: core.serialization.number().optional(),
     relevanceScore: core.serialization.property("relevance_score", core.serialization.number().optional()),

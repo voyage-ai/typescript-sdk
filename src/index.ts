@@ -1,4 +1,4 @@
-export * as Voyage from "./api";
-export { VoyageClient } from "./Client";
-export { VoyageEnvironment } from "./environments";
-export { VoyageError, VoyageTimeoutError } from "./errors";
+export * as VoyageAI from "./api";
+export { VoyageAIClient } from "./Client";
+export { VoyageAIEnvironment } from "./environments";
+export { VoyageAIError, VoyageAITimeoutError } from "./errors";

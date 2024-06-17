@@ -3,14 +3,16 @@
  */
 
 import * as serializers from "../index";
-import * as Voyage from "../../api/index";
+import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
 
-export const EmbedRequestInput: core.serialization.Schema<serializers.EmbedRequestInput.Raw, Voyage.EmbedRequestInput> =
-    core.serialization.undiscriminatedUnion([
-        core.serialization.string(),
-        core.serialization.list(core.serialization.string()),
-    ]);
+export const EmbedRequestInput: core.serialization.Schema<
+    serializers.EmbedRequestInput.Raw,
+    VoyageAI.EmbedRequestInput
+> = core.serialization.undiscriminatedUnion([
+    core.serialization.string(),
+    core.serialization.list(core.serialization.string()),
+]);
 
 export declare namespace EmbedRequestInput {
     type Raw = string | string[];

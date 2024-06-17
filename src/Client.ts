@@ -4,14 +4,14 @@
 
 import * as environments from "./environments";
 import * as core from "./core";
-import * as Voyage from "./api/index";
+import * as VoyageAI from "./api/index";
 import * as serializers from "./serialization/index";
 import urlJoin from "url-join";
 import * as errors from "./errors/index";
 
-export declare namespace VoyageClient {
+export declare namespace VoyageAIClient {
     interface Options {
-        environment?: core.Supplier<environments.VoyageEnvironment | string>;
+        environment?: core.Supplier<environments.VoyageAIEnvironment | string>;
         apiKey: core.Supplier<string>;
         fetcher?: core.FetchFunction;
     }
@@ -23,35 +23,35 @@ export declare namespace VoyageClient {
     }
 }
 
-export class VoyageClient {
-    constructor(protected readonly _options: VoyageClient.Options) {}
+export class VoyageAIClient {
+    constructor(protected readonly _options: VoyageAIClient.Options) {}
 
     /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
      *
-     * @param {Voyage.EmbedRequest} request
-     * @param {VoyageClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {VoyageAI.EmbedRequest} request
+     * @param {VoyageAIClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
-     *     await voyage.embed({
+     *     await voyageAi.embed({
      *         input: "input",
      *         model: "model"
      *     })
      */
     public async embed(
-        request: Voyage.EmbedRequest,
-        requestOptions?: VoyageClient.RequestOptions
-    ): Promise<Voyage.EmbedResponse> {
+        request: VoyageAI.EmbedRequest,
+        requestOptions?: VoyageAIClient.RequestOptions
+    ): Promise<VoyageAI.EmbedResponse> {
         const _response = await (this._options.fetcher ?? core.fetcher)({
             url: urlJoin(
-                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageEnvironment.Default,
+                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageAIEnvironment.Default,
                 "embeddings"
             ),
             method: "POST",
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "",
-                "X-Fern-SDK-Version": "0.0.4",
+                "X-Fern-SDK-Version": "0.0.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -73,7 +73,7 @@ export class VoyageClient {
         }
 
         if (_response.error.reason === "status-code") {
-            throw new errors.VoyageError({
+            throw new errors.VoyageAIError({
                 statusCode: _response.error.statusCode,
                 body: _response.error.body,
             });
@@ -81,14 +81,14 @@ export class VoyageClient {
 
         switch (_response.error.reason) {
             case "non-json":
-                throw new errors.VoyageError({
+                throw new errors.VoyageAIError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.rawBody,
                 });
             case "timeout":
-                throw new errors.VoyageTimeoutError();
+                throw new errors.VoyageAITimeoutError();
             case "unknown":
-                throw new errors.VoyageError({
+                throw new errors.VoyageAIError({
                     message: _response.error.errorMessage,
                 });
         }
@@ -97,30 +97,30 @@ export class VoyageClient {
     /**
      * Voyage reranker endpoint receives as input a query, a list of documents, and other arguments such as the model name, and returns a response containing the reranking results.
      *
-     * @param {Voyage.RerankRequest} request
-     * @param {VoyageClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {VoyageAI.RerankRequest} request
+     * @param {VoyageAIClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
-     *     await voyage.rerank({
+     *     await voyageAi.rerank({
      *         query: "query",
      *         documents: ["documents"],
      *         model: "model"
      *     })
      */
     public async rerank(
-        request: Voyage.RerankRequest,
-        requestOptions?: VoyageClient.RequestOptions
-    ): Promise<Voyage.RerankResponse> {
+        request: VoyageAI.RerankRequest,
+        requestOptions?: VoyageAIClient.RequestOptions
+    ): Promise<VoyageAI.RerankResponse> {
         const _response = await (this._options.fetcher ?? core.fetcher)({
             url: urlJoin(
-                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageEnvironment.Default,
+                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageAIEnvironment.Default,
                 "rerank"
             ),
             method: "POST",
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "",
-                "X-Fern-SDK-Version": "0.0.4",
+                "X-Fern-SDK-Version": "0.0.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -142,7 +142,7 @@ export class VoyageClient {
         }
 
         if (_response.error.reason === "status-code") {
-            throw new errors.VoyageError({
+            throw new errors.VoyageAIError({
                 statusCode: _response.error.statusCode,
                 body: _response.error.body,
             });
@@ -150,14 +150,14 @@ export class VoyageClient {
 
         switch (_response.error.reason) {
             case "non-json":
-                throw new errors.VoyageError({
+                throw new errors.VoyageAIError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.rawBody,
                 });
             case "timeout":
-                throw new errors.VoyageTimeoutError();
+                throw new errors.VoyageAITimeoutError();
             case "unknown":
-                throw new errors.VoyageError({
+                throw new errors.VoyageAIError({
                     message: _response.error.errorMessage,
                 });
         }
@@ -165,6 +165,6 @@ export class VoyageClient {
 
     protected async _getCustomAuthorizationHeaders() {
         const apiKeyValue = await core.Supplier.get(this._options.apiKey);
-        return { Bearer_Authorization: apiKeyValue };
+        return { "Authorization: Bearer": apiKeyValue };
     }
 }

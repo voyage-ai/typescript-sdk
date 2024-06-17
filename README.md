@@ -1,9 +1,9 @@
-# Voyage TypeScript Library
+# Voyageai TypeScript Library
 
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-SDK%20generated%20by%20Fern-brightgreen)](https://github.com/fern-api/fern)
 [![npm shield](https://img.shields.io/npm/v/)](https://www.npmjs.com/package/)
 
-The Voyage TypeScript library provides convenient access to the Voyage API from TypeScript.
+The Voyageai TypeScript library provides convenient access to the Voyageai API from TypeScript.
 
 ## Installation
 
@@ -16,10 +16,10 @@ npm i -s
 Instantiate and use the client with the following:
 
 ```typescript
-import { VoyageClient } from "";
+import { VoyageAIClient } from "";
 
-const voyage = new VoyageClient({ apiKey: "YOUR_API_KEY" });
-await voyage.embed({
+const voyageAi = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
+await voyageAi.embed({
     input: "input",
     model: "model",
 });
@@ -31,12 +31,12 @@ The SDK exports all request and response types as TypeScript interfaces. Simply 
 following namespace:
 
 ```typescript
-import { Voyage } from "";
+import { VoyageAI } from "";
 
-const request: Voyage.EmbedRequest = {
+const request: VoyageAI.EmbedRequest = {
     ...
 };
-const response = await voyage.embed(request);
+const response = await voyageAi.embed(request);
 ```
 
 ## Exception Handling
@@ -45,12 +45,12 @@ When the API returns a non-success status code (4xx or 5xx response), a subclass
 will be thrown.
 
 ```typescript
-import { VoyageError } from '';
+import { VoyageAIError } from '';
 
 try {
-    await voyage.embed(...);
+    await voyageAi.embed(...);
 } catch (err) {
-    if (err instanceof VoyageError) {
+    if (err instanceof VoyageAIError) {
         console.log(err.statusCode);
         console.log(err.message);
         console.log(err.body);
@@ -73,7 +73,7 @@ A request is deemed retriable when any of the following HTTP status codes is ret
 Use the `maxRetries` request option to configure this behavior.
 
 ```typescript
-const response = await voyage.embed(..., {
+const response = await voyageAi.embed(..., {
     maxRetries: 0 // override maxRetries at the request level
 });
 ```
@@ -83,7 +83,7 @@ const response = await voyage.embed(..., {
 The SDK defaults to a 60 second timeout. Use the `timeoutInSeconds` option to configure this behavior.
 
 ```typescript
-const response = await voyage.embed(..., {
+const response = await voyageAi.embed(..., {
     timeoutInSeconds: 30 // override timeout to 30s
 });
 ```
@@ -94,7 +94,7 @@ The SDK allows users to abort requests at any point by passing in an abort signa
 
 ```typescript
 const controller = new AbortController();
-const response = await voyage.embed(..., {
+const response = await voyageAi.embed(..., {
     abortSignal: controller.signal
 });
 controller.abort(); // aborts the request
@@ -118,9 +118,9 @@ The SDK provides a way for your to customize the underlying HTTP client / Fetch 
 unsupported environment, this provides a way for you to break glass and ensure the SDK works.
 
 ```typescript
-import { VoyageClient } from '';
+import { VoyageAIClient } from '';
 
-const voyage = new VoyageClient({
+const voyageAi = new VoyageAIClient({
     ...
     fetcher: // provide your implementation here
 });
