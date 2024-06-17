@@ -1,9 +1,9 @@
-# Voyageai TypeScript Library
+# Voyage TypeScript Library
 
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-SDK%20generated%20by%20Fern-brightgreen)](https://github.com/fern-api/fern)
 [![npm shield](https://img.shields.io/npm/v/)](https://www.npmjs.com/package/)
 
-The Voyageai TypeScript library provides convenient access to the Voyageai API from TypeScript.
+The Voyage TypeScript library provides convenient access to the Voyage API from TypeScript.
 
 ## Installation
 
