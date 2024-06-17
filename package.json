@@ -1,6 +1,6 @@
 {
     "name": "voyageai",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "private": false,
     "repository": "https://github.com/fern-demo/voyage-typescript-sdk",
     "main": "./index.js",
@@ -16,7 +16,8 @@
         "form-data": "4.0.0",
         "formdata-node": "^6.0.3",
         "node-fetch": "2.7.0",
-        "qs": "6.11.2"
+        "qs": "6.11.2",
+        "js-base64": "3.7.2"
     },
     "devDependencies": {
         "@types/url-join": "4.0.1",
