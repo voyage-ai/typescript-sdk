@@ -1,6 +1,6 @@
 ## Embeddings
 
-<details><summary> <code>voyageAi.<a href="./src/Client.ts">embed</a>({ ...params }) -> VoyageAI.EmbedResponse</code> </summary>
+<details><summary> <code>client.<a href="./src/Client.ts">embed</a>({ ...params }) -> VoyageAI.EmbedResponse</code> </summary>
 
 <dl>
 
@@ -37,7 +37,7 @@ Voyage embedding endpoint receives as input a string (or a list of strings) and 
 <dd>
 
 ```ts
-await voyageAi.embed({
+await client.embed({
     input: "input",
     model: "model",
 });
@@ -88,7 +88,7 @@ await voyageAi.embed({
 
 ## Reranker
 
-<details><summary> <code>voyageAi.<a href="./src/Client.ts">rerank</a>({ ...params }) -> VoyageAI.RerankResponse</code> </summary>
+<details><summary> <code>client.<a href="./src/Client.ts">rerank</a>({ ...params }) -> VoyageAI.RerankResponse</code> </summary>
 
 <dl>
 
@@ -125,7 +125,7 @@ Voyage reranker endpoint receives as input a query, a list of documents, and oth
 <dd>
 
 ```ts
-await voyageAi.rerank({
+await client.rerank({
     query: "query",
     documents: ["documents"],
     model: "model",

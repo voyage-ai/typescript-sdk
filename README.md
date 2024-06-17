@@ -16,10 +16,11 @@ npm i -s voyageai
 Instantiate and use the client with the following:
 
 ```typescript
+import * as environments from "../src/environments";
 import { VoyageAIClient } from "voyageai";
 
-const voyageAi = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
-await voyageAi.embed({
+const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
+await client.embed({
     input: "input",
     model: "model",
 });
@@ -36,7 +37,7 @@ import { VoyageAI } from "voyageai";
 const request: VoyageAI.EmbedRequest = {
     ...
 };
-const response = await voyageAi.embed(request);
+const response = await client.embed(request);
 ```
 
 ## Exception Handling
@@ -45,10 +46,10 @@ When the API returns a non-success status code (4xx or 5xx response), a subclass
 will be thrown.
 
 ```typescript
-import { VoyageAIError } from 'voyageai';
+import { VoyageAIError } from "voyageai";
 
 try {
-    await voyageAi.embed(...);
+    await client.embed(...);
 } catch (err) {
     if (err instanceof VoyageAIError) {
         console.log(err.statusCode);
@@ -73,7 +74,7 @@ A request is deemed retriable when any of the following HTTP status codes is ret
 Use the `maxRetries` request option to configure this behavior.
 
 ```typescript
-const response = await voyageAi.embed(..., {
+const response = await client.embed(..., {
     maxRetries: 0 // override maxRetries at the request level
 });
 ```
@@ -83,7 +84,7 @@ const response = await voyageAi.embed(..., {
 The SDK defaults to a 60 second timeout. Use the `timeoutInSeconds` option to configure this behavior.
 
 ```typescript
-const response = await voyageAi.embed(..., {
+const response = await client.embed(..., {
     timeoutInSeconds: 30 // override timeout to 30s
 });
 ```
@@ -94,7 +95,7 @@ The SDK allows users to abort requests at any point by passing in an abort signa
 
 ```typescript
 const controller = new AbortController();
-const response = await voyageAi.embed(..., {
+const response = await client.embed(..., {
     abortSignal: controller.signal
 });
 controller.abort(); // aborts the request
@@ -118,9 +119,9 @@ The SDK provides a way for your to customize the underlying HTTP client / Fetch 
 unsupported environment, this provides a way for you to break glass and ensure the SDK works.
 
 ```typescript
-import { VoyageAIClient } from 'voyageai';
+import { VoyageAIClient } from "voyageai";
 
-const voyageAi = new VoyageAIClient({
+const client = new VoyageAIClient({
     ...
     fetcher: // provide your implementation here
 });

@@ -33,7 +33,7 @@ export class VoyageAIClient {
      * @param {VoyageAIClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
-     *     await voyageAi.embed({
+     *     await client.embed({
      *         input: "input",
      *         model: "model"
      *     })
@@ -51,7 +51,7 @@ export class VoyageAIClient {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.11",
+                "X-Fern-SDK-Version": "0.0.12",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -101,7 +101,7 @@ export class VoyageAIClient {
      * @param {VoyageAIClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
-     *     await voyageAi.rerank({
+     *     await client.rerank({
      *         query: "query",
      *         documents: ["documents"],
      *         model: "model"
@@ -120,7 +120,7 @@ export class VoyageAIClient {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.11",
+                "X-Fern-SDK-Version": "0.0.12",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
