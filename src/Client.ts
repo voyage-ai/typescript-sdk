@@ -51,7 +51,7 @@ export class VoyageAIClient {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.12",
+                "X-Fern-SDK-Version": "0.0.13",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -120,7 +120,7 @@ export class VoyageAIClient {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.12",
+                "X-Fern-SDK-Version": "0.0.13",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
