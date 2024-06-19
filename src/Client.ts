@@ -12,7 +12,7 @@ import * as errors from "./errors/index";
 export declare namespace VoyageAIClient {
     interface Options {
         environment?: core.Supplier<environments.VoyageAIEnvironment | string>;
-        apiKey: core.Supplier<string>;
+        apiKey?: core.Supplier<core.BearerToken | undefined>;
         fetcher?: core.FetchFunction;
     }
 
@@ -24,7 +24,7 @@ export declare namespace VoyageAIClient {
 }
 
 export class VoyageAIClient {
-    constructor(protected readonly _options: VoyageAIClient.Options) {}
+    constructor(protected readonly _options: VoyageAIClient.Options = {}) {}
 
     /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
@@ -49,12 +49,12 @@ export class VoyageAIClient {
             ),
             method: "POST",
             headers: {
+                Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.13",
+                "X-Fern-SDK-Version": "0.0.14",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
-                ...(await this._getCustomAuthorizationHeaders()),
             },
             contentType: "application/json",
             body: await serializers.EmbedRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
@@ -118,12 +118,12 @@ export class VoyageAIClient {
             ),
             method: "POST",
             headers: {
+                Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.13",
+                "X-Fern-SDK-Version": "0.0.14",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
-                ...(await this._getCustomAuthorizationHeaders()),
             },
             contentType: "application/json",
             body: await serializers.RerankRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
@@ -163,8 +163,14 @@ export class VoyageAIClient {
         }
     }
 
-    protected async _getCustomAuthorizationHeaders() {
-        const apiKeyValue = await core.Supplier.get(this._options.apiKey);
-        return { "Authorization": "Bearer "+apiKeyValue };
+    protected async _getAuthorizationHeader(): Promise<string> {
+        const bearer = (await core.Supplier.get(this._options.apiKey)) ?? process?.env["VOYAGE_API_KEY"];
+        if (bearer == null) {
+            throw new errors.VoyageAIError({
+                message: "Please specify VOYAGE_API_KEY when instantiating the client.",
+            });
+        }
+
+        return `Bearer ${bearer}`;
     }
 }
