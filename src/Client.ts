@@ -165,6 +165,6 @@ export class VoyageAIClient {
 
     protected async _getCustomAuthorizationHeaders() {
         const apiKeyValue = await core.Supplier.get(this._options.apiKey);
-        return { "Authorization: Bearer": apiKeyValue };
+        return { "Authorization": "Bearer "+apiKeyValue };
     }
 }
