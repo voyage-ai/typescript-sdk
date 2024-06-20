@@ -1,9 +1,9 @@
-# Voyage TypeScript Library
+# Dsinghvi TypeScript Library
 
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-SDK%20generated%20by%20Fern-brightgreen)](https://github.com/fern-api/fern)
 [![npm shield](https://img.shields.io/npm/v/voyageai)](https://www.npmjs.com/package/voyageai)
 
-The Voyage TypeScript library provides convenient access to the Voyage API from TypeScript.
+The Dsinghvi TypeScript library provides convenient access to the Dsinghvi API from TypeScript.
 
 ## Installation
 
