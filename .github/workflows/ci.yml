@@ -25,11 +25,14 @@ jobs:
 
       - name: Set up node
         uses: actions/setup-node@v3
+      
+      - name: Install fern
+        run: npm install -g fern-api
 
       - name: Compile
-        run: yarn && yarn test    
-        env: 
-          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+        run: | 
+          yarn install
+          fern test --command "yarn test ./tests/generated"
 
   publish:
     needs: [ compile, test ]

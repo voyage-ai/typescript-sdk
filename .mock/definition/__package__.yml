@@ -1,0 +1,248 @@
+types:
+  EmbedRequestInput:
+    discriminated: false
+    docs: >
+      A single text string, or a list of texts as a list of strings. Currently,
+      we have two constraints on the list: <ul>  <li> The maximum length of the
+      list is 128. </li>  <li> The total number of tokens in the list is at most
+      320K for `voyage-2`, and 120K for `voyage-large-2`, `voyage-finance-2`,
+      `voyage-multilingual-2`, `voyage-law-2`, and `voyage-code-2`. </li> <ul>
+    union:
+      - string
+      - list<string>
+  EmbedRequestInputType:
+    enum:
+      - query
+      - document
+    docs: >
+      Type of the input text. Defaults to `null`. Other options: `query`,
+      `document`.
+  EmbedResponseDataItem:
+    properties:
+      object:
+        type: optional<string>
+        docs: The object type, which is always "embedding".
+      embedding:
+        type: optional<list<double>>
+        docs: >
+          The embedding vector consists of a list of floating-point numbers. The
+          length of this vector varies depending on the specific model.
+      index:
+        type: optional<integer>
+        docs: >
+          An integer representing the index of the embedding within the list of
+          embeddings.
+  EmbedResponseUsage:
+    properties:
+      total_tokens:
+        type: optional<integer>
+        docs: The total number of tokens used for computing the embeddings.
+  EmbedResponse:
+    properties:
+      object:
+        type: optional<string>
+        docs: The object type, which is always "list".
+      data:
+        type: optional<list<EmbedResponseDataItem>>
+        docs: An array of embedding objects.
+      model:
+        type: optional<string>
+        docs: Name of the model.
+      usage: optional<EmbedResponseUsage>
+  RerankResponseDataItem:
+    properties:
+      index:
+        type: optional<integer>
+        docs: The index of the document in the input list.
+      relevance_score:
+        type: optional<double>
+        docs: The relevance score of the document with respect to the query.
+      document:
+        type: optional<string>
+        docs: >
+          The document string. Only returned when return_documents is set to
+          true.
+  RerankResponseUsage:
+    properties:
+      total_tokens:
+        type: optional<integer>
+        docs: The total number of tokens used for computing the reranking.
+  RerankResponse:
+    properties:
+      object:
+        type: optional<string>
+        docs: The object type, which is always "list".
+      data:
+        type: optional<list<RerankResponseDataItem>>
+        docs: >
+          An array of the reranking results, sorted by the descending order of
+          relevance scores.
+      model:
+        type: optional<string>
+        docs: Name of the model.
+      usage: optional<RerankResponseUsage>
+service:
+  auth: false
+  base-path: ''
+  endpoints:
+    embed:
+      path: /embeddings
+      method: POST
+      auth: true
+      docs: >-
+        Voyage embedding endpoint receives as input a string (or a list of
+        strings) and other arguments such as the preferred model name, and
+        returns a response containing a list of embeddings.
+      display-name: Embeddings
+      request:
+        name: EmbedRequest
+        body:
+          properties:
+            input:
+              type: EmbedRequestInput
+              docs: >
+                A single text string, or a list of texts as a list of strings.
+                Currently, we have two constraints on the list: <ul>  <li> The
+                maximum length of the list is 128. </li>  <li> The total number
+                of tokens in the list is at most 320K for `voyage-2`, and 120K
+                for `voyage-large-2`, `voyage-finance-2`,
+                `voyage-multilingual-2`, `voyage-law-2`, and `voyage-code-2`.
+                </li> <ul>
+            model:
+              type: string
+              docs: >
+                Name of the model. Recommended options: `voyage-2`,
+                `voyage-large-2`, `voyage-finance-2`, `voyage-multilingual-2`,
+                `voyage-law-2`, `voyage-code-2`.
+            input_type:
+              type: optional<EmbedRequestInputType>
+              docs: >
+                Type of the input text. Defaults to `null`. Other options:
+                `query`, `document`.
+            truncation:
+              type: optional<boolean>
+              docs: >
+                Whether to truncate the input texts to fit within the context
+                length. Defaults to `true`. <ul>  <li> If `true`, over-length
+                input texts will be truncated to fit within the context length,
+                before vectorized by the embedding model. </li>  <li> If
+                `false`, an error will be raised if any given text exceeds the
+                context length. </li>  </ul>
+            encoding_format:
+              type: optional<literal<"base64">>
+              docs: >
+                Format in which the embeddings are encoded. We support two
+                options:  <ul> <li> If not specified (defaults to `null`): the
+                embeddings are represented as lists of floating-point numbers;
+                </li>  <li> `base64`: the embeddings are compressed to
+                [base64](https://docs.python.org/3/library/base64.html)
+                encodings. </li>  </ul>
+      response:
+        docs: Success
+        type: EmbedResponse
+      examples:
+        - name: Success
+          request:
+            input: [
+              "Sample text 1",
+              "Sample text 2"
+            ]
+            model: "voyage-large-2"
+          response:
+            body:
+              object: object
+              data:
+                - object: object
+                  embedding:
+                    - 1.1
+                  index: 1
+              model: model
+              usage:
+                total_tokens: 1
+    rerank:
+      path: /rerank
+      method: POST
+      auth: true
+      docs: >
+        Voyage reranker endpoint receives as input a query, a list of documents,
+        and other arguments such as the model name, and returns a response
+        containing the reranking results.
+      display-name: Reranker
+      request:
+        name: RerankRequest
+        body:
+          properties:
+            query:
+              type: string
+              docs: >
+                The query as a string. The query can contain a maximum of 1000
+                tokens for `rerank-lite-1` and 2000 tokens for `rerank-1`.
+            documents:
+              docs: >
+                The documents to be reranked as a list of strings. <ul> <li> The
+                number of documents cannot exceed 1000. </li> <li> The sum of
+                the number of tokens in the query and the number of tokens in
+                any single document cannot exceed 4000 for `rerank-lite-1` and
+                8000 for `rerank-1`. </li> <li> he total number of tokens,
+                defined as "the number of query tokens × the number of documents
+                + sum of the number of tokens in all documents", cannot exceed
+                300K for `rerank-lite-1` and 100K for `rerank-1`. Please see our
+                <a
+                href="https://docs.voyageai.com/docs/faq#what-is-the-total-number-of-tokens-for-the-rerankers">FAQ</a>.
+                </li> </ul>
+              type: list<string>
+            model:
+              type: string
+              docs: >
+                Name of the model. Recommended options: `rerank-lite-1`,
+                `rerank-1`.
+            top_k:
+              type: optional<integer>
+              docs: >
+                The number of most relevant documents to return. If not
+                specified, the reranking results of all documents will be
+                returned.
+            return_documents:
+              type: optional<boolean>
+              docs: >
+                Whether to return the documents in the response. Defaults to
+                `false`. <ul> <li> If `false`, the API will return a list of
+                {"index", "relevance_score"} where "index" refers to the index
+                of a document within the input list. </li> <li> If `true`, the
+                API will return a list of {"index", "document",
+                "relevance_score"} where "document" is the corresponding
+                document from the input list. </li> </ul>
+            truncation:
+              type: optional<boolean>
+              docs: >
+                Whether to truncate the input to satisfy the "context length
+                limit" on the query and the documents. Defaults to `true`. <ul>
+                <li> If `true`,  the query and documents will be truncated to
+                fit within the context length limit, before processed by the
+                reranker model. </li> <li> If `false`, an error will be raised
+                when the query exceeds 1000 tokens for `rerank-lite-1` and 2000
+                tokens for `rerank-1`, or the sum of the number of tokens in the
+                query and the number of tokens in any single document exceeds
+                4000 for `rerank-lite-1` and 8000 for `rerank-1`. </li> </ul>
+      response:
+        docs: Success
+        type: RerankResponse
+      examples:
+        - name: Success
+          request:
+            query: "Sample query"
+            documents: [
+              "Sample document 1",
+              "Sample document 2"
+            ]
+            model: "rerank-lite-1"
+          response:
+            body:
+              object: object
+              data:
+                - index: 1
+                  relevance_score: 1.1
+                  document: document
+              model: model
+              usage:
+                total_tokens: 1
