@@ -143,11 +143,8 @@ service:
       examples:
         - name: Success
           request:
-            input: [
-              "Sample text 1",
-              "Sample text 2"
-            ]
-            model: "voyage-large-2"
+            input: input
+            model: model
           response:
             body:
               object: object
@@ -230,12 +227,10 @@ service:
       examples:
         - name: Success
           request:
-            query: "Sample query"
-            documents: [
-              "Sample document 1",
-              "Sample document 2"
-            ]
-            model: "rerank-lite-1"
+            query: query
+            documents:
+              - documents
+            model: model
           response:
             body:
               object: object
