@@ -7,8 +7,8 @@ import * as VoyageAI from "../../index";
 /**
  * @example
  *     {
- *         input: "input",
- *         model: "model"
+ *         input: "a",
+ *         model: "voyage-large-2"
  *     }
  */
 export interface EmbedRequest {

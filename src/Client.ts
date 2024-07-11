@@ -37,8 +37,8 @@ export class VoyageAIClient {
      *
      * @example
      *     await client.embed({
-     *         input: "input",
-     *         model: "model"
+     *         input: "a",
+     *         model: "voyage-large-2"
      *     })
      */
     public async embed(
@@ -55,7 +55,7 @@ export class VoyageAIClient {
                 Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.16",
+                "X-Fern-SDK-Version": "0.0.17",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
             },
@@ -124,7 +124,7 @@ export class VoyageAIClient {
                 Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.16",
+                "X-Fern-SDK-Version": "0.0.17",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
             },

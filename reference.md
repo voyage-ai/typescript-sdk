@@ -38,8 +38,8 @@ Voyage embedding endpoint receives as input a string (or a list of strings) and 
 
 ```ts
 await client.embed({
-    input: "input",
-    model: "model",
+    input: "a",
+    model: "voyage-large-2",
 });
 ```
 
