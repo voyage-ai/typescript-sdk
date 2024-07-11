@@ -3,58 +3,90 @@ name: ci
 on: [push]
 
 jobs:
-  compile:
-    runs-on: ubuntu-latest
+    compile:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
 
-      - name: Set up node
-        uses: actions/setup-node@v3
+            - name: Set up node
+              uses: actions/setup-node@v3
 
-      - name: Compile
-        run: yarn && yarn build
+            - name: Compile
+              run: yarn && yarn build
 
-  test:
-    runs-on: ubuntu-latest
+    unit-test:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
 
-      - name: Set up node
-        uses: actions/setup-node@v3
-      
-      - name: Install fern
-        run: npm install -g fern-api
+            - name: Set up node
+              uses: actions/setup-node@v3
+            
+            - name: Install dependencies
+              run: yarn install
 
-      - name: Compile
-        run: | 
-          yarn install
-          fern test --command "yarn test ./tests/generated"
+            - name: Unit Test
+              run: yarn test:unit
 
-  publish:
-    needs: [ compile, test ]
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+    mock-test:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
 
-      - name: Set up node
-        uses: actions/setup-node@v3
+            - name: Set up node
+              uses: actions/setup-node@v3
+            
+            - name: Install dependencies
+              run: yarn install
+            
+            - name: Mock Server Test
+              run: yarn test:mock
 
-      - name: Install dependencies
-        run: yarn install
+    integration-test:
+        runs-on: ubuntu-latest
 
-      - name: Build
-        run: yarn build
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
 
-      - name: Publish to npm
-        run: |
-          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-          npm publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Set up node
+              uses: actions/setup-node@v3
+            
+            - name: Install dependencies
+              run: yarn install
+            
+            - name: Integration Server Test
+              env: 
+                VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+              run: yarn test:integration
+
+    publish:
+        needs: [compile, unit-test, mock-test, integration-test]
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
+
+            - name: Set up node
+              uses: actions/setup-node@v3
+
+            - name: Install dependencies
+              run: yarn install
+
+            - name: Build
+              run: yarn build
+
+            - name: Publish to npm
+              run: |
+                  npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+                  npm publish --access public
+              env:
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
