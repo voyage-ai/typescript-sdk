@@ -2,7 +2,6 @@ import { VoyageAIClient as Client } from "../../src/Client";
 import { FetchFunction, Fetcher } from "../../src/core/fetcher/Fetcher";
 import { VoyageAIError, VoyageAITimeoutError } from "../../src/errors";
 
-
 const documents = [
     "The Mediterranean diet emphasizes fish, olive oil, and vegetables, believed to reduce chronic diseases.",
     "Photosynthesis in plants converts light energy into glucose and produces essential oxygen.",
@@ -22,21 +21,31 @@ describe("Client full integration tests", () => {
 
     test("Reranking - happy path", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
-        const result = await client.rerank({ query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-1" });
+        const result = await client.rerank({
+            query: "When is the Apple's conference call scheduled?",
+            documents: documents,
+            model: "rerank-1",
+        });
         expect(result.model).toBe("rerank-1");
         expect(result.data?.length).toBe(documents.length);
     });
 
     test("Embeddings - happy path++", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
-        const result = await client.embed({ input: documents, model: "voyage-large-2" }, { timeoutInSeconds: 1, maxRetries: 1, abortSignal: undefined});
+        const result = await client.embed(
+            { input: documents, model: "voyage-large-2" },
+            { timeoutInSeconds: 1, maxRetries: 1, abortSignal: undefined }
+        );
         expect(result.model).toBe("voyage-large-2");
         expect(result.data?.length).toBe(documents.length);
     });
 
     test("Reranking - happy path++", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
-        const result = await client.rerank({ query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-1" }, { timeoutInSeconds: 1, maxRetries: 1 });
+        const result = await client.rerank(
+            { query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-1" },
+            { timeoutInSeconds: 1, maxRetries: 1 }
+        );
         expect(result.model).toBe("rerank-1");
         expect(result.data?.length).toBe(documents.length);
     });
@@ -47,7 +56,8 @@ describe("Client full integration tests", () => {
             await client.embed({
                 input: documents,
                 model: "voyage-large-2",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 
     test("Reranking - auth error", async () => {
@@ -57,7 +67,8 @@ describe("Client full integration tests", () => {
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
                 model: "rerank-1",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 
     test("Embeddings - NonJson error", async () => {
@@ -70,13 +81,14 @@ describe("Client full integration tests", () => {
                     rawBody: "raw non-json body",
                 },
             };
-        }
+        };
         await expect(async () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.embed({
                 input: documents,
                 model: "voyage-large-2",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 
     test("Reranking - NonJson error", async () => {
@@ -89,14 +101,15 @@ describe("Client full integration tests", () => {
                     rawBody: "raw non-json body",
                 },
             };
-        }
+        };
         await expect(async () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
                 model: "rerank-1",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 
     test("Embeddings - Timeout error", async () => {
@@ -107,13 +120,14 @@ describe("Client full integration tests", () => {
                     reason: "timeout",
                 },
             };
-        }
+        };
         await expect(async () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.embed({
                 input: documents,
                 model: "voyage-large-2",
-        })}).rejects.toThrow(VoyageAITimeoutError);
+            });
+        }).rejects.toThrow(VoyageAITimeoutError);
     });
 
     test("Reranking - Timeout error", async () => {
@@ -124,14 +138,15 @@ describe("Client full integration tests", () => {
                     reason: "timeout",
                 },
             };
-        }
+        };
         await expect(async () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
                 model: "rerank-1",
-        })}).rejects.toThrow(VoyageAITimeoutError);
+            });
+        }).rejects.toThrow(VoyageAITimeoutError);
     });
 
     test("Embeddings - Unknown error", async () => {
@@ -142,14 +157,15 @@ describe("Client full integration tests", () => {
                     reason: "unknown",
                     errorMessage: "Unknown error occured",
                 },
-             };
-        }
+            };
+        };
         await expect(async () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.embed({
                 input: documents,
                 model: "voyage-large-2",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 
     test("Reranking - Unknown error", async () => {
@@ -161,14 +177,15 @@ describe("Client full integration tests", () => {
                     errorMessage: "Unknown error occured",
                 },
             };
-        }
+        };
         await expect(async () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
                 model: "rerank-1",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 
     test("Embedding - no auth header", async () => {
@@ -178,6 +195,7 @@ describe("Client full integration tests", () => {
             await client.embed({
                 input: documents,
                 model: "voyage-large-2",
-        })}).rejects.toThrow(VoyageAIError);
+            });
+        }).rejects.toThrow(VoyageAIError);
     });
 });
