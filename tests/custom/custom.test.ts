@@ -34,7 +34,8 @@ describe("Client full integration tests", () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed(
             { input: documents, model: "voyage-large-2" },
-            { timeoutInSeconds: 1, maxRetries: 1, abortSignal: undefined }
+            { timeoutInSeconds: 1, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
+
         );
         expect(result.model).toBe("voyage-large-2");
         expect(result.data?.length).toBe(documents.length);
@@ -44,7 +45,7 @@ describe("Client full integration tests", () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.rerank(
             { query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-1" },
-            { timeoutInSeconds: 1, maxRetries: 1 }
+            { timeoutInSeconds: 1, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
         );
         expect(result.model).toBe("rerank-1");
         expect(result.data?.length).toBe(documents.length);
