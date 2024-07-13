@@ -11,7 +11,8 @@
         "prepack": "cp -rv dist/. .",
         "test:unit": "jest tests/unit",
         "test:mock": "fern test --command 'yarn jest tests/integration'",
-        "test:integration": "jest tests/integration tests/custom"
+        "test:integration": "jest tests/integration tests/custom",
+        "test:coverage": "jest --coverage tests/unit tests/integration tests/custom"
     },
     "dependencies": {
         "form-data": "4.0.0",
