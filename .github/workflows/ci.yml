@@ -66,6 +66,24 @@ jobs:
                 VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
               run: yarn test:integration
 
+    coverage:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
+
+            - name: Set up node
+              uses: actions/setup-node@v3
+
+            - name: Install dependencies
+              run: yarn install
+
+            - name: Integration Server Test
+              env:
+                VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+              run: yarn test:coverage
+
     publish:
         needs: [compile, unit-test, mock-test, integration-test]
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
