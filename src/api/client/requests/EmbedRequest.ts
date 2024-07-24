@@ -10,6 +10,9 @@ import * as VoyageAI from "../../index";
  *         input: "a",
  *         model: "voyage-large-2"
  *     }
+ *
+ * @example
+ *     {}
  */
 export interface EmbedRequest {
     /**

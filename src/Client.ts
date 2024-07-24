@@ -40,6 +40,9 @@ export class VoyageAIClient {
      *         input: "a",
      *         model: "voyage-large-2"
      *     })
+     *
+     * @example
+     *     await client.embed({})
      */
     public async embed(
         request: VoyageAI.EmbedRequest,
@@ -55,11 +58,12 @@ export class VoyageAIClient {
                 Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.17",
+                "X-Fern-SDK-Version": "0.0.1-2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
             },
             contentType: "application/json",
+            requestType: "json",
             body: serializers.EmbedRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
@@ -124,11 +128,12 @@ export class VoyageAIClient {
                 Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.17",
+                "X-Fern-SDK-Version": "0.0.1-2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
             },
             contentType: "application/json",
+            requestType: "json",
             body: serializers.RerankRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,

@@ -30,6 +30,7 @@ describe("Test fetcherImpl", () => {
             headers: { "X-Test": "x-test-header" },
             body: { data: "test" },
             contentType: "application/json",
+            requestType: "json",
         };
 
         mockCreateUrl.mockReturnValue("https://test.com");

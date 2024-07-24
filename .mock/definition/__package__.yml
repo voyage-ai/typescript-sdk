@@ -1690,6 +1690,22 @@ service:
               model: voyage-large-2
               usage:
                 total_tokens: 2
+        - code-samples:
+            - language: shell
+              code: |-
+                curl --request POST \
+                     --url https://api.voyageai.com/v1/embeddings \
+                     --header "Authorization: Bearer $VOYAGE_API_KEY" \
+                     --header "content-type: application/json" \
+                     --data '
+                {
+                  "input": [
+                    "Sample text 1",
+                    "Sample text 2"
+                  ],
+                  "model": "voyage-large-2"
+                }
+                '
     rerank:
       path: /rerank
       method: POST
@@ -1775,3 +1791,20 @@ service:
               model: model
               usage:
                 total_tokens: 1
+          code-samples:
+            - language: shell
+              code: |-
+                curl --request POST \
+                     --url https://api.voyageai.com/v1/rerank \
+                     --header "Authorization: Bearer $VOYAGE_API_KEY" \
+                     --header "content-type: application/json" \
+                     --data '
+                {
+                  "query": "Sample query",
+                  "documents": [
+                    "Sample document 1",
+                    "Sample document 2"
+                  ],
+                  "model": "rerank-lite-1"
+                }
+                '
