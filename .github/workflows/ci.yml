@@ -46,7 +46,9 @@ jobs:
               run: yarn install
             
             - name: Mock Server Test
-              run: yarn test:mock
+              run: | 
+                npm install -g fern-api
+                fern test --command 'yarn jest tests/integration'
 
     integration-test:
         runs-on: ubuntu-latest
