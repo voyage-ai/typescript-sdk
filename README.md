@@ -19,7 +19,10 @@ Instantiate and use the client with the following:
 import { VoyageAIClient } from "voyageai";
 
 const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
-await client.embed({});
+await client.embed({
+    input: "input",
+    model: "model",
+});
 ```
 
 ## Request And Response Types
