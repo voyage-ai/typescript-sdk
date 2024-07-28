@@ -30,7 +30,7 @@ describe("Client full integration tests", () => {
         expect(result.data?.length).toBe(documents.length);
     });
 
-    test("Embeddings - happy path++", async () => {
+    test("Embeddings - happy path with RequestOptions", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed(
             { input: documents, model: "voyage-large-2" },
@@ -41,7 +41,7 @@ describe("Client full integration tests", () => {
         expect(result.data?.length).toBe(documents.length);
     });
 
-    test("Reranking - happy path++", async () => {
+    test("Reranking - happy path with RequestOptions", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.rerank(
             { query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-1" },
