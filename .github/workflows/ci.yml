@@ -69,7 +69,7 @@ jobs:
               run: yarn jest --coverage tests/unit tests/integration tests/custom
 
     publish:
-        needs: [compile, unit-test, mock-test, integration-test]
+        needs: [compile, unit-test, integration-test]
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         runs-on: ubuntu-latest
 
