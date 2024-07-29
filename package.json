@@ -1,6 +1,6 @@
 {
     "name": "voyageai",
-    "version": "0.0.1-3",
+    "version": "0.0.1-4",
     "private": false,
     "repository": "https://github.com/voyage-ai/typescript-sdk",
     "main": "./index.js",
