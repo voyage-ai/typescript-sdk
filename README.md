@@ -25,6 +25,20 @@ await client.embed({
 });
 ```
 
+## Batch request
+
+The SDK supports batch requests. Instantiate and use the client similarly as above:
+
+```typescript
+import { VoyageAIClient } from "voyageai";
+
+const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
+await client.embed({
+    input: ["input1", "input2", "input3", "input4"],
+    model: "model",
+});
+```
+
 ## Request And Response Types
 
 The SDK exports all request and response types as TypeScript interfaces. Simply import them with the
