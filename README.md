@@ -5,24 +5,14 @@
 
 The Voyage TypeScript library provides convenient access to the Voyage API from TypeScript.
 
+## Documentation
+
+API reference documentation is available [here](https://api.voyageai.com).
+
 ## Installation
 
 ```sh
 npm i -s voyageai
-```
-
-## Usage
-
-Instantiate and use the client with the following:
-
-```typescript
-import { VoyageAIClient } from "voyageai";
-
-const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
-await client.embed({
-    input: "input",
-    model: "model",
-});
 ```
 
 ## Batch request
@@ -35,6 +25,20 @@ import { VoyageAIClient } from "voyageai";
 const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
 await client.embed({
     input: ["input1", "input2", "input3", "input4"],
+    model: "model",
+});
+```
+
+## Usage
+
+Instantiate and use the client with the following:
+
+```typescript
+import { VoyageAIClient } from "voyageai";
+
+const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
+await client.embed({
+    input: "input",
     model: "model",
 });
 ```
