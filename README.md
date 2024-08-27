@@ -7,7 +7,7 @@ The Voyage TypeScript library provides convenient access to the Voyage API from 
 
 ## Documentation
 
-API reference documentation is available [here](https://api.voyageai.com).
+API reference documentation is available [here](https://docs.voyageai.com/reference/embeddings-api).
 
 ## Installation
 
