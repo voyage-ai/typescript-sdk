@@ -10,6 +10,8 @@ types:
     union:
       - string
       - list<string>
+    source:
+      openapi: openapi/openapi.yml
   EmbedRequestInputType:
     enum:
       - query
@@ -17,6 +19,8 @@ types:
     docs: >
       Type of the input text. Defaults to `null`. Other options: `query`,
       `document`.
+    source:
+      openapi: openapi/openapi.yml
   EmbedResponseDataItem:
     properties:
       object:
@@ -32,11 +36,15 @@ types:
         docs: >
           An integer representing the index of the embedding within the list of
           embeddings.
+    source:
+      openapi: openapi/openapi.yml
   EmbedResponseUsage:
     properties:
       total_tokens:
         type: optional<integer>
         docs: The total number of tokens used for computing the embeddings.
+    source:
+      openapi: openapi/openapi.yml
   EmbedResponse:
     properties:
       object:
@@ -49,6 +57,8 @@ types:
         type: optional<string>
         docs: Name of the model.
       usage: optional<EmbedResponseUsage>
+    source:
+      openapi: openapi/openapi.yml
   RerankResponseDataItem:
     properties:
       index:
@@ -62,11 +72,15 @@ types:
         docs: >
           The document string. Only returned when return_documents is set to
           true.
+    source:
+      openapi: openapi/openapi.yml
   RerankResponseUsage:
     properties:
       total_tokens:
         type: optional<integer>
         docs: The total number of tokens used for computing the reranking.
+    source:
+      openapi: openapi/openapi.yml
   RerankResponse:
     properties:
       object:
@@ -81,6 +95,8 @@ types:
         type: optional<string>
         docs: Name of the model.
       usage: optional<RerankResponseUsage>
+    source:
+      openapi: openapi/openapi.yml
 service:
   auth: false
   base-path: ''
@@ -274,3 +290,5 @@ service:
                   "model": "rerank-lite-1"
                 }
                 '
+  source:
+    openapi: openapi/openapi.yml
