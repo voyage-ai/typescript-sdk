@@ -1,6 +1,7 @@
 import { VoyageAIClient as Client } from "../../src/Client";
 import { FetchFunction, Fetcher } from "../../src/core/fetcher/Fetcher";
 import { VoyageAIError, VoyageAITimeoutError } from "../../src/errors";
+import { MultimodalEmbedRequestInputsItem } from "../../src/serialization";
 
 const documents = [
     "The Mediterranean diet emphasizes fish, olive oil, and vegetables, believed to reduce chronic diseases.",
@@ -10,6 +11,34 @@ const documents = [
     "Apple’s conference call to discuss fourth fiscal quarter results and business updates is scheduled for Thursday, November 2, 2023 at 2:00 p.m. PT / 5:00 p.m. ET.",
     "Shakespeare's works, like 'Hamlet' and 'A Midsummer Night's Dream,' endure in literature.",
 ];
+
+const multimodal_inputs = [
+    {
+        content: [
+            {
+                type: "text",
+                text: "The Mediterranean diet emphasizes fish, olive oil, and vegetables, believed to reduce chronic diseases.",
+            },
+            {
+                type: "image_url",
+                imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/1200px-Good_Food_Display_-_NCI_Visuals_Online.jpg",
+            },
+        ]
+    },
+    {
+        content: [
+            {
+                type: "text",
+                text: "The Mediterranean diet emphasizes fish, olive oil, and vegetables, believed to reduce chronic diseases.",
+            },
+            {
+                type: "image_url",
+                imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/1200px-Good_Food_Display_-_NCI_Visuals_Online.jpg",
+            },
+        ]
+    }
+];
+
 
 describe("Client full integration tests", () => {
     test("Embeddings - happy path", async () => {
@@ -30,6 +59,13 @@ describe("Client full integration tests", () => {
         expect(result.data?.length).toBe(documents.length);
     });
 
+    test("Embeddings - happy path", async () => {
+        const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
+        const result = await client.multimodalEmbed({ inputs: multimodal_inputs, model: "voyage-multimodal-3" });
+        expect(result.model).toBe("voyage-multimodal-3");
+        expect(result.data?.length).toBe(multimodal_inputs.length);
+    });    
+    
     test("Embeddings - happy path with RequestOptions", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed(
