@@ -6,3 +6,8 @@ export * from "./EmbedResponse";
 export * from "./RerankResponseDataItem";
 export * from "./RerankResponseUsage";
 export * from "./RerankResponse";
+export * from "./MultimodalEmbedRequestInputsItem";
+export * from "./MultimodalEmbedRequestInputType";
+export * from "./MultimodalEmbedResponseDataItem";
+export * from "./MultimodalEmbedResponseUsage";
+export * from "./MultimodalEmbedResponse";

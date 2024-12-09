@@ -12,9 +12,9 @@
  *   </ul>
  * <ul></ul></ul>
  */
-export type MultimodalembeddingsApiRequestInputType = "query" | "document";
+export type MultimodalEmbedRequestInputType = "query" | "document";
 
-export const MultimodalembeddingsApiRequestInputType = {
+export const MultimodalEmbedRequestInputType = {
     Query: "query",
     Document: "document",
 } as const;

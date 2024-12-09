@@ -8,7 +8,6 @@ import * as VoyageAI from "./api/index";
 import * as serializers from "./serialization/index";
 import urlJoin from "url-join";
 import * as errors from "./errors/index";
-import { Endpoints } from "./api/resources/endpoints/client/Client";
 
 export declare namespace VoyageAIClient {
     interface Options {
@@ -171,10 +170,74 @@ export class VoyageAIClient {
         }
     }
 
-    protected _endpoints: Endpoints | undefined;
+    /**
+     * The Voyage multimodal embedding endpoint returns vector representations for a given list of multimodal inputs consisting of text, images, or an interleaving of both modalities.
+     *
+     * @param {VoyageAI.MultimodalEmbedRequest} request
+     * @param {VoyageAIClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @example
+     *     await client.multimodalEmbed({
+     *         inputs: [{}],
+     *         model: "model"
+     *     })
+     */
+    public async multimodalEmbed(
+        request: VoyageAI.MultimodalEmbedRequest,
+        requestOptions?: VoyageAIClient.RequestOptions
+    ): Promise<VoyageAI.MultimodalEmbedResponse> {
+        const _response = await (this._options.fetcher ?? core.fetcher)({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageAIEnvironment.Default,
+                "multimodalembeddings"
+            ),
+            method: "POST",
+            headers: {
+                Authorization: await this._getAuthorizationHeader(),
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "voyageai",
+                "X-Fern-SDK-Version": "0.0.2-1",
+                "User-Agent": "voyageai/0.0.2-1",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.MultimodalEmbedRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return serializers.MultimodalEmbedResponse.parseOrThrow(_response.body, {
+                unrecognizedObjectKeys: "passthrough",
+                allowUnrecognizedUnionMembers: true,
+                allowUnrecognizedEnumValues: true,
+                skipValidation: true,
+                breadcrumbsPrefix: ["response"],
+            });
+        }
 
-    public get endpoints(): Endpoints {
-        return (this._endpoints ??= new Endpoints(this._options));
+        if (_response.error.reason === "status-code") {
+            throw new errors.VoyageAIError({
+                statusCode: _response.error.statusCode,
+                body: _response.error.body,
+            });
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.VoyageAIError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                });
+            case "timeout":
+                throw new errors.VoyageAITimeoutError();
+            case "unknown":
+                throw new errors.VoyageAIError({
+                    message: _response.error.errorMessage,
+                });
+        }
     }
 
     protected async _getAuthorizationHeader(): Promise<string> {
