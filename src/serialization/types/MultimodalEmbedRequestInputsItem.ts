@@ -5,16 +5,17 @@
 import * as serializers from "../index";
 import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
+import { MultimodalEmbedRequestInputsItemContentItem } from "./MultimodalEmbedRequestInputsItemContentItem";
 
 export const MultimodalEmbedRequestInputsItem: core.serialization.ObjectSchema<
     serializers.MultimodalEmbedRequestInputsItem.Raw,
     VoyageAI.MultimodalEmbedRequestInputsItem
 > = core.serialization.object({
-    content: core.serialization.unknown().optional(),
+    content: core.serialization.list(MultimodalEmbedRequestInputsItemContentItem).optional(),
 });
 
 export declare namespace MultimodalEmbedRequestInputsItem {
     interface Raw {
-        content?: unknown | null;
+        content?: MultimodalEmbedRequestInputsItemContentItem.Raw[] | null;
     }
 }
