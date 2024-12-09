@@ -4,7 +4,7 @@
 
 export interface MultimodalEmbedRequestInputsItemContentItem {
     /** Specifies the type of the piece of the content. Allowed values are `text`, `image_url`, or `image_base64`. */
-    type?: string;
+    type: string;
     /** Only present when type is `text`. The value should be a text string. */
     text?: string;
     /** Only present when type is `image_base64`. The value should be a Base64-encoded image in the data URL format `data:[<mediatype>];base64,<data>`. Currently supported mediatypes are: `image/png`, `image/jpeg`, `image/webp`, and `image/gif`. */

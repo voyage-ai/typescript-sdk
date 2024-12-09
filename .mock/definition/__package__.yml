@@ -100,7 +100,7 @@ types:
   MultimodalEmbedRequestInputsItemContentItem:
     properties:
       type:
-        type: optional<string>
+        type: string
         docs: >
           Specifies the type of the piece of the content.  Allowed values are
           `text`, `image_url`, or `image_base64`.

@@ -10,7 +10,7 @@ export const MultimodalEmbedRequestInputsItemContentItem: core.serialization.Obj
     serializers.MultimodalEmbedRequestInputsItemContentItem.Raw,
     VoyageAI.MultimodalEmbedRequestInputsItemContentItem
 > = core.serialization.object({
-    type: core.serialization.string().optional(),
+    type: core.serialization.string(),
     text: core.serialization.string().optional(),
     imageBase64: core.serialization.property("image_base64", core.serialization.string().optional()),
     imageUrl: core.serialization.property("image_url", core.serialization.string().optional()),
@@ -18,7 +18,7 @@ export const MultimodalEmbedRequestInputsItemContentItem: core.serialization.Obj
 
 export declare namespace MultimodalEmbedRequestInputsItemContentItem {
     interface Raw {
-        type?: string | null;
+        type: string;
         text?: string | null;
         image_base64?: string | null;
         image_url?: string | null;
