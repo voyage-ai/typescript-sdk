@@ -1,0 +1,1 @@
+export { MultimodalembeddingsApiRequest } from "./MultimodalembeddingsApiRequest";

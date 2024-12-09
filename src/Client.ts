@@ -8,6 +8,7 @@ import * as VoyageAI from "./api/index";
 import * as serializers from "./serialization/index";
 import urlJoin from "url-join";
 import * as errors from "./errors/index";
+import { Endpoints } from "./api/resources/endpoints/client/Client";
 
 export declare namespace VoyageAIClient {
     interface Options {
@@ -55,8 +56,8 @@ export class VoyageAIClient {
                 Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.1-5",
-                "User-Agent": "voyageai/0.0.1-5",
+                "X-Fern-SDK-Version": "0.0.2-1",
+                "User-Agent": "voyageai/0.0.2-1",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
             },
@@ -126,8 +127,8 @@ export class VoyageAIClient {
                 Authorization: await this._getAuthorizationHeader(),
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "voyageai",
-                "X-Fern-SDK-Version": "0.0.1-5",
-                "User-Agent": "voyageai/0.0.1-5",
+                "X-Fern-SDK-Version": "0.0.2-1",
+                "User-Agent": "voyageai/0.0.2-1",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
             },
@@ -168,6 +169,12 @@ export class VoyageAIClient {
                     message: _response.error.errorMessage,
                 });
         }
+    }
+
+    protected _endpoints: Endpoints | undefined;
+
+    public get endpoints(): Endpoints {
+        return (this._endpoints ??= new Endpoints(this._options));
     }
 
     protected async _getAuthorizationHeader(): Promise<string> {

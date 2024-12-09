@@ -1,6 +1,6 @@
 # Voyage TypeScript Library
 
-[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-SDK%20generated%20by%20Fern-brightgreen)](https://github.com/fern-api/fern)
+[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2Fvoyage-ai%2Ftypescript-sdk)
 [![npm shield](https://img.shields.io/npm/v/voyageai)](https://www.npmjs.com/package/voyageai)
 
 The Voyage TypeScript library provides convenient access to the Voyage API from TypeScript.
@@ -51,7 +51,7 @@ following namespace:
 ```typescript
 import { VoyageAI } from "voyageai";
 
-const request: VoyageAI.EmbedRequest = {
+const request: VoyageAI.MultimodalembeddingsApiRequest = {
     ...
 };
 ```
