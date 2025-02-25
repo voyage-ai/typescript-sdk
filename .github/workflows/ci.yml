@@ -70,7 +70,7 @@ jobs:
 
     publish:
         needs: [compile, unit-test, integration-test]
-        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/') && ${{ ! contains(github.ref, 'refs/tags/just_generate') }}
         runs-on: ubuntu-latest
 
         steps:
@@ -86,9 +86,21 @@ jobs:
             - name: Build
               run: yarn build
 
-            - name: Publish to npm
-              run: |
-                  npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-                  npm publish --access public
-              env:
-                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+#            - name: Publish to npm
+#              run: |
+#                  npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+#                  npm publish --access public
+#              env:
+#                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    delete-tag-if-generation-only:
+        needs: [compile, unit-test, integration-test]
+        if: contains(github.ref, 'refs/tags/just_generate')
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repo
+              uses: ClementTsang/delete-tag-and-release@v0.3.1
+              with:
+                delete_release: true
+                tag_name: just_generate # tag name to delete
