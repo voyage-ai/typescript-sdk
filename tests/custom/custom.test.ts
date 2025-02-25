@@ -47,8 +47,8 @@ const multimodal_inputs = [
 describe("Client full integration tests", () => {
     test("Embeddings - happy path", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
-        const result = await client.embed({ input: documents, model: "voyage-3" });
-        expect(result.model).toBe("voyage-3");
+        const result = await client.embed({ input: documents, model: "voyage-3-large" });
+        expect(result.model).toBe("voyage-3-large");
         expect(result.data?.length).toBe(documents.length);
     });
 
@@ -57,9 +57,9 @@ describe("Client full integration tests", () => {
         const result = await client.rerank({
             query: "When is the Apple's conference call scheduled?",
             documents: documents,
-            model: "rerank-1",
+            model: "rerank-2",
         });
-        expect(result.model).toBe("rerank-1");
+        expect(result.model).toBe("rerank-2");
         expect(result.data?.length).toBe(documents.length);
     });
 
@@ -73,21 +73,21 @@ describe("Client full integration tests", () => {
     test("Embeddings - happy path with RequestOptions", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed(
-            { input: documents, model: "voyage-large-2" },
-            { timeoutInSeconds: 1, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
+            { input: documents, model: "voyage-3-large" },
+            { timeoutInSeconds: 10000, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
 
         );
-        expect(result.model).toBe("voyage-large-2");
+        expect(result.model).toBe("voyage-3-large");
         expect(result.data?.length).toBe(documents.length);
     });
 
     test("Reranking - happy path with RequestOptions", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.rerank(
-            { query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-1" },
-            { timeoutInSeconds: 1, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
+            { query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-2" },
+            { timeoutInSeconds: 10000, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
         );
-        expect(result.model).toBe("rerank-1");
+        expect(result.model).toBe("rerank-2");
         expect(result.data?.length).toBe(documents.length);
     });
 
@@ -96,7 +96,7 @@ describe("Client full integration tests", () => {
             const client = new Client({ apiKey: "not a valid key" });
             await client.embed({
                 input: documents,
-                model: "voyage-3",
+                model: "voyage-3-large",
             });
         }).rejects.toThrow(VoyageAIError);
     });
@@ -107,7 +107,7 @@ describe("Client full integration tests", () => {
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
-                model: "rerank-1",
+                model: "rerank-2",
             });
         }).rejects.toThrow(VoyageAIError);
     });
@@ -127,7 +127,7 @@ describe("Client full integration tests", () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.embed({
                 input: documents,
-                model: "voyage-large-2",
+                model: "voyage-3-large",
             });
         }).rejects.toThrow(VoyageAIError);
     });
@@ -148,7 +148,7 @@ describe("Client full integration tests", () => {
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
-                model: "rerank-1",
+                model: "rerank-2",
             });
         }).rejects.toThrow(VoyageAIError);
     });
@@ -166,7 +166,7 @@ describe("Client full integration tests", () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.embed({
                 input: documents,
-                model: "voyage-large-2",
+                model: "voyage-3-large",
             });
         }).rejects.toThrow(VoyageAITimeoutError);
     });
@@ -185,7 +185,7 @@ describe("Client full integration tests", () => {
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
-                model: "rerank-1",
+                model: "rerank-2",
             });
         }).rejects.toThrow(VoyageAITimeoutError);
     });
@@ -204,7 +204,7 @@ describe("Client full integration tests", () => {
             const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
             await client.embed({
                 input: documents,
-                model: "voyage-large-2",
+                model: "voyage-3-large",
             });
         }).rejects.toThrow(VoyageAIError);
     });
@@ -224,7 +224,7 @@ describe("Client full integration tests", () => {
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
-                model: "rerank-1",
+                model: "rerank-2",
             });
         }).rejects.toThrow(VoyageAIError);
     });
@@ -235,7 +235,7 @@ describe("Client full integration tests", () => {
             const client = new Client();
             await client.embed({
                 input: documents,
-                model: "voyage-large-2",
+                model: "voyage-3-large",
             });
         }).rejects.toThrow(VoyageAIError);
     });
