@@ -12,6 +12,7 @@ types:
       - list<string>
     source:
       openapi: openapi/openapi.yml
+    inline: true
   EmbedRequestInputType:
     enum:
       - query
@@ -19,6 +20,7 @@ types:
     docs: >
       Type of the input text. Defaults to `null`. Other options: `query`,
       `document`.
+    inline: true
     source:
       openapi: openapi/openapi.yml
   EmbedResponseDataItem:
@@ -38,6 +40,7 @@ types:
           embeddings.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   EmbedResponseUsage:
     properties:
       total_tokens:
@@ -45,6 +48,7 @@ types:
         docs: The total number of tokens used for computing the embeddings.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   EmbedResponse:
     properties:
       object:
@@ -74,6 +78,7 @@ types:
           true.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   RerankResponseUsage:
     properties:
       total_tokens:
@@ -81,6 +86,7 @@ types:
         docs: The total number of tokens used for computing the reranking.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   RerankResponse:
     properties:
       object:
@@ -121,11 +127,13 @@ types:
           linking to the image.  We support PNG, JPEG, WEBP, and GIF images.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   MultimodalEmbedRequestInputsItem:
     properties:
       content: optional<list<MultimodalEmbedRequestInputsItemContentItem>>
     source:
       openapi: openapi/openapi.yml
+    inline: true
   MultimodalEmbedRequestInputType:
     enum:
       - query
@@ -167,6 +175,7 @@ types:
           <li> For&nbsp;<code class="rdmd-code lang- theme-light" data-lang="" name="" tabindex="0"><span class="cm-s-neo" data-testid="SyntaxHighlighter">document</span></code>, the prompt is <i>"Represent the query for retrieving supporting documents:&nbsp;".</i> </li>
         </ul> 
       <ul></ul></ul>
+    inline: true
     source:
       openapi: openapi/openapi.yml
   MultimodalEmbedResponseDataItem:
@@ -186,6 +195,7 @@ types:
           embeddings.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   MultimodalEmbedResponseUsage:
     properties:
       total_tokens:
@@ -193,6 +203,7 @@ types:
         docs: The total number of tokens used for computing the embeddings.
     source:
       openapi: openapi/openapi.yml
+    inline: true
   MultimodalEmbedResponse:
     properties:
       object:
@@ -219,6 +230,8 @@ service:
         Voyage embedding endpoint receives as input a string (or a list of
         strings) and other arguments such as the preferred model name, and
         returns a response containing a list of embeddings.
+      source:
+        openapi: openapi/openapi.yml
       display-name: Embeddings
       request:
         name: EmbedRequest
@@ -263,9 +276,11 @@ service:
                 </li>  <li> `base64`: the embeddings are compressed to
                 [base64](https://docs.python.org/3/library/base64.html)
                 encodings. </li>  </ul>
+        content-type: application/json
       response:
         docs: Success
         type: EmbedResponse
+        status-code: 200
       examples:
         - name: Success
           request:
@@ -306,6 +321,8 @@ service:
         Voyage reranker endpoint receives as input a query, a list of documents,
         and other arguments such as the model name, and returns a response
         containing the reranking results.
+      source:
+        openapi: openapi/openapi.yml
       display-name: Reranker
       request:
         name: RerankRequest
@@ -363,9 +380,11 @@ service:
                 tokens for `rerank-1`, or the sum of the number of tokens in the
                 query and the number of tokens in any single document exceeds
                 4000 for `rerank-lite-1` and 8000 for `rerank-1`. </li> </ul>
+        content-type: application/json
       response:
         docs: Success
         type: RerankResponse
+        status-code: 200
       examples:
         - name: Success
           request:
@@ -408,6 +427,8 @@ service:
         The Voyage multimodal embedding endpoint returns vector representations
         for a given list of multimodal inputs consisting of text, images, or an
         interleaving of both modalities.
+      source:
+        openapi: openapi/openapi.yml
       display-name: Multimodal embeddings
       request:
         name: MultimodalEmbedRequest
@@ -546,9 +567,11 @@ service:
                 </li>  <li> `base64`: the embeddings are compressed to
                 [base64](https://docs.python.org/3/library/base64.html)
                 encodings. </li>  </ul>
+        content-type: application/json
       response:
         docs: Success
         type: MultimodalEmbedResponse
+        status-code: 200
       examples:
         - name: Success
           request:
