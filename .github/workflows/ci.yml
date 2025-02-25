@@ -70,7 +70,7 @@ jobs:
 
     publish:
         needs: [compile, unit-test, integration-test]
-        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/') && ${{ ! contains(github.ref, 'refs/tags/just_generate') }}
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/') && ${{ ! contains(github.ref, 'refs/tags/0.0.0') }}
         runs-on: ubuntu-latest
 
         steps:
@@ -95,7 +95,7 @@ jobs:
 
     delete-tag-if-generation-only:
         needs: [compile, unit-test, integration-test]
-        if: contains(github.ref, 'refs/tags/just_generate')
+        if: contains(github.ref, 'refs/tags/0.0.0')
         runs-on: ubuntu-latest
 
         steps:
@@ -103,4 +103,4 @@ jobs:
               uses: ClementTsang/delete-tag-and-release@v0.3.1
               with:
                 delete_release: true
-                tag_name: just_generate # tag name to delete
+                tag_name: 0.0.0 # tag name to delete
