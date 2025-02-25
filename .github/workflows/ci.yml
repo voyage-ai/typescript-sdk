@@ -87,7 +87,6 @@ jobs:
               run: yarn build
 
             - name: Publish to npm
-              if: $NPM_TOKEN != '' && $NPM_TOKEN != 'not_a_valid_token'
               run: |
                   npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
                   npm publish --access public
