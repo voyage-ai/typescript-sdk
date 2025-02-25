@@ -47,8 +47,8 @@ const multimodal_inputs = [
 describe("Client full integration tests", () => {
     test("Embeddings - happy path", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
-        const result = await client.embed({ input: documents, model: "voyage-large-2" });
-        expect(result.model).toBe("voyage-large-2");
+        const result = await client.embed({ input: documents, model: "voyage-3" });
+        expect(result.model).toBe("voyage-3");
         expect(result.data?.length).toBe(documents.length);
     });
 
@@ -96,7 +96,7 @@ describe("Client full integration tests", () => {
             const client = new Client({ apiKey: "not a valid key" });
             await client.embed({
                 input: documents,
-                model: "voyage-large-2",
+                model: "voyage-3",
             });
         }).rejects.toThrow(VoyageAIError);
     });
