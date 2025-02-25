@@ -70,7 +70,7 @@ jobs:
 
     publish:
         needs: [compile, unit-test, integration-test]
-        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/') && ${{ ! contains(github.ref, 'refs/tags/0.0.0') }}
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/') && ${{ ! contains(github.ref, '0.0.0') }}
         runs-on: ubuntu-latest
 
         steps:
@@ -93,9 +93,9 @@ jobs:
 #              env:
 #                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    delete-tag-if-generation-only:
+    delete-tag-if-code-generation-only:
         needs: [compile, unit-test, integration-test]
-        if: contains(github.ref, 'refs/tags/0.0.0')
+        if: contains(github.ref, '0.0.0')
         runs-on: ubuntu-latest
 
         steps:
@@ -104,3 +104,5 @@ jobs:
               with:
                 delete_release: true
                 tag_name: 0.0.0 # tag name to delete
+              env:
+                GITHUB_TOKEN: ${{ secrets.TAGGING_GITHUB_TOKEN }}
