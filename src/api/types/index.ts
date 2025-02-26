@@ -1,5 +1,6 @@
 export * from "./EmbedRequestInput";
 export * from "./EmbedRequestInputType";
+export * from "./EmbedRequestOutputDtype";
 export * from "./EmbedResponseDataItem";
 export * from "./EmbedResponseUsage";
 export * from "./EmbedResponse";

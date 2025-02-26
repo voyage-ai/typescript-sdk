@@ -95,6 +95,23 @@ paths:
                     </ul>
                   enum:
                     - base64
+                output_dimension:
+                  type: integer
+                  description: >
+                    The number of dimensions for resulting output embeddings. Defaults to `null`.
+                output_dtype:
+                  type: string
+                  description: >
+                    The data type for the embeddings to be returned. Defaults to `float`. 
+                    Other options: `int8`, `uint8`, `binary`, `ubinary`. `float` is supported for all models. 
+                    `int8`, `uint8`, `binary`, and `ubinary` are supported by `voyage-3-large` and `voyage-code-3`. 
+                    Please see our guide for more details about output data types.
+                  enum:
+                    - float
+                    - int8
+                    - uint8
+                    - binary
+                    - ubinary
       responses:
         '200':
           description: Success
@@ -117,8 +134,9 @@ paths:
                         embedding:
                           type: array
                           description: >
-                            The embedding vector consists of a list of floating-point numbers. The
-                            length of this vector varies depending on the specific model.
+                            Each embedding is a vector represented as an array of `float` numbers when `output_dtype` is set to `float` 
+                            and as an array of integers for all other values of `output_dtype` (`int8`, `uint8`, `binary`, and `ubinary`). 
+                            The length of this vector varies depending on the specific model, `output_dimension`, and `output_dtype`.
                           items:
                             type: number
                         index:

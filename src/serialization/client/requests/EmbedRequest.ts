@@ -7,6 +7,7 @@ import * as VoyageAI from "../../../api/index";
 import * as core from "../../../core";
 import { EmbedRequestInput } from "../../types/EmbedRequestInput";
 import { EmbedRequestInputType } from "../../types/EmbedRequestInputType";
+import { EmbedRequestOutputDtype } from "../../types/EmbedRequestOutputDtype";
 
 export const EmbedRequest: core.serialization.Schema<serializers.EmbedRequest.Raw, VoyageAI.EmbedRequest> =
     core.serialization.object({
@@ -18,6 +19,8 @@ export const EmbedRequest: core.serialization.Schema<serializers.EmbedRequest.Ra
             "encoding_format",
             core.serialization.stringLiteral("base64").optional()
         ),
+        outputDimension: core.serialization.property("output_dimension", core.serialization.number().optional()),
+        outputDtype: core.serialization.property("output_dtype", EmbedRequestOutputDtype.optional()),
     });
 
 export declare namespace EmbedRequest {
@@ -27,5 +30,7 @@ export declare namespace EmbedRequest {
         input_type?: EmbedRequestInputType.Raw | null;
         truncation?: boolean | null;
         encoding_format?: "base64" | null;
+        output_dimension?: number | null;
+        output_dtype?: EmbedRequestOutputDtype.Raw | null;
     }
 }

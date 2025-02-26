@@ -37,4 +37,14 @@ export interface EmbedRequest {
      *
      */
     encodingFormat?: "base64";
+    /**
+     * The number of dimensions for resulting output embeddings. Defaults to `null`.
+     *
+     */
+    outputDimension?: number;
+    /**
+     * The data type for the embeddings to be returned. Defaults to `float`.  Other options: `int8`, `uint8`, `binary`, `ubinary`. `float` is supported for all models.  `int8`, `uint8`, `binary`, and `ubinary` are supported by `voyage-3-large` and `voyage-code-3`.  Please see our guide for more details about output data types.
+     *
+     */
+    outputDtype?: VoyageAI.EmbedRequestOutputDtype;
 }

@@ -23,6 +23,22 @@ types:
     inline: true
     source:
       openapi: openapi/openapi.yml
+  EmbedRequestOutputDtype:
+    enum:
+      - float
+      - int8
+      - uint8
+      - binary
+      - ubinary
+    docs: >
+      The data type for the embeddings to be returned. Defaults to `float`. 
+      Other options: `int8`, `uint8`, `binary`, `ubinary`. `float` is supported
+      for all models.  `int8`, `uint8`, `binary`, and `ubinary` are supported by
+      `voyage-3-large` and `voyage-code-3`.  Please see our guide for more
+      details about output data types.
+    inline: true
+    source:
+      openapi: openapi/openapi.yml
   EmbedResponseDataItem:
     properties:
       object:
@@ -31,8 +47,11 @@ types:
       embedding:
         type: optional<list<double>>
         docs: >
-          The embedding vector consists of a list of floating-point numbers. The
-          length of this vector varies depending on the specific model.
+          Each embedding is a vector represented as an array of `float` numbers
+          when `output_dtype` is set to `float`  and as an array of integers for
+          all other values of `output_dtype` (`int8`, `uint8`, `binary`, and
+          `ubinary`).  The length of this vector varies depending on the
+          specific model, `output_dimension`, and `output_dtype`.
       index:
         type: optional<integer>
         docs: >
@@ -276,6 +295,20 @@ service:
                 </li>  <li> `base64`: the embeddings are compressed to
                 [base64](https://docs.python.org/3/library/base64.html)
                 encodings. </li>  </ul>
+            output_dimension:
+              type: optional<integer>
+              docs: >
+                The number of dimensions for resulting output embeddings.
+                Defaults to `null`.
+            output_dtype:
+              type: optional<EmbedRequestOutputDtype>
+              docs: >
+                The data type for the embeddings to be returned. Defaults to
+                `float`.  Other options: `int8`, `uint8`, `binary`, `ubinary`.
+                `float` is supported for all models.  `int8`, `uint8`, `binary`,
+                and `ubinary` are supported by `voyage-3-large` and
+                `voyage-code-3`.  Please see our guide for more details about
+                output data types.
         content-type: application/json
       response:
         docs: Success
