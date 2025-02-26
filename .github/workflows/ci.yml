@@ -86,12 +86,12 @@ jobs:
             - name: Build
               run: yarn build
 
-#            - name: Publish to npm
-#              run: |
-#                  npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
-#                  npm publish --access public
-#              env:
-#                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Publish to npm
+              run: |
+                  npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+                  npm publish --access public
+              env:
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     delete-tag-if-code-generation-only:
         needs: [compile, unit-test, integration-test]
