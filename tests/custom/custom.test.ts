@@ -52,6 +52,22 @@ describe("Client full integration tests", () => {
         expect(result.data?.length).toBe(documents.length);
     });
 
+    test("Embeddings - happy path, output_dimension", async () => {
+        const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
+        const result = await client.embed({ input: documents, model: "voyage-3-large", outputDimension: 2048 });
+        expect(result.model).toBe("voyage-3-large");
+        expect(result.data?.length).toBe(documents.length);
+        expect(result.data?.[0].embedding?.length).toBe(2048);
+    });
+
+    test("Embeddings - happy path, output_dimension & output_dtype", async () => {
+        const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
+        const result = await client.embed({ input: documents, model: "voyage-3-large", outputDimension: 2048, outputDtype: "binary" });
+        expect(result.model).toBe("voyage-3-large");
+        expect(result.data?.length).toBe(documents.length);
+        expect(result.data?.[0].embedding?.length).toBe(256);
+    });
+
     test("Reranking - happy path", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.rerank({
