@@ -44,6 +44,19 @@ const multimodal_inputs = [
 ];
 
 
+const contextualized_inputs = [
+    [
+        "The Mediterranean diet emphasizes fish, olive oil, and vegetables, believed to reduce chronic diseases.",
+        "The Mediterranean diet is a way of eating based on the traditional cuisines of countries bordering the Mediterranean Sea. It emphasizes plant-based foods, healthy fats, and moderate amounts of dairy, poultry, and seafood, while limiting red meat and processed foods. The diet is known for its potential health benefits, including heart health, weight management, and cognitive function. "
+    ],
+    [
+        "The Warrior Diet is a weight-loss diet that involves a rather extreme form of intermittent fasting. This eating plan mimics the pattern of ancient warriors and is designed to aid weight loss and improve the body's 'survival instincts.' The Warrior diet encourages 20 hours a day of undereating, followed by a four-hour window of overeating. This window doesn't have specific calorie targets or limits.",
+        "The Warrior Diet is an intermittent fasting method that doesn't require fasting completely. You eat very little for 20 hours a day and then eat as much food as you like during a four-hour evening window. This window has no specific calorie targets or limits.",
+        "The Warrior Diet is split into three weeks, or 'phases'. You can repeat this process, continuing to do so until you meet your goals after completing the three phases."
+    ]
+];
+
+
 describe("Client full integration tests", () => {
     test("Embeddings - happy path", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
@@ -85,7 +98,14 @@ describe("Client full integration tests", () => {
         expect(result.model).toBe("voyage-multimodal-3");
         expect(result.data?.length).toBe(multimodal_inputs.length);
     });    
-    
+
+    test("Contextualized Chunk embeddings - happy path", async () => {
+        const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
+        const result = await client.contextualizedEmbed({ inputs: contextualized_inputs, model: "voyage-context-3" });
+        expect(result.model).toBe("voyage-context-3");
+        expect(result.data?.length).toBe(contextualized_inputs.length);
+    });
+
     test("Embeddings - happy path with RequestOptions", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed(
