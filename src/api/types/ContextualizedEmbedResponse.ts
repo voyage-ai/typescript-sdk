@@ -8,7 +8,7 @@ export interface ContextualizedEmbedResponse {
     /** The object type, which is always "contextualized_embeddings". */
     object?: string;
     /** An array of contextualized embedding results, one for each input document. */
-    results?: VoyageAI.ContextualizedEmbedResponseResultsItem[];
+    data?: VoyageAI.ContextualizedEmbedResponseDataItem[];
     /** Name of the model used. */
     model?: string;
     usage?: VoyageAI.ContextualizedEmbedResponseUsage;

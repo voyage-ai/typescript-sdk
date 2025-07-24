@@ -267,7 +267,7 @@ types:
     inline: true
     source:
       openapi: openapi/openapi.yml
-  ContextualizedEmbedResponseResultsItemEmbeddingsItem:
+  ContextualizedEmbedResponseDataItemEmbeddingsItem:
     properties:
       object:
         type: optional<string>
@@ -286,10 +286,10 @@ types:
     source:
       openapi: openapi/openapi.yml
     inline: true
-  ContextualizedEmbedResponseResultsItem:
+  ContextualizedEmbedResponseDataItem:
     properties:
       embeddings:
-        type: optional<list<ContextualizedEmbedResponseResultsItemEmbeddingsItem>>
+        type: optional<list<ContextualizedEmbedResponseDataItemEmbeddingsItem>>
         docs: An array of embeddings for each chunk in the document.
       document_index:
         type: optional<integer>
@@ -312,8 +312,8 @@ types:
       object:
         type: optional<string>
         docs: The object type, which is always "contextualized_embeddings".
-      results:
-        type: optional<list<ContextualizedEmbedResponseResultsItem>>
+      data:
+        type: optional<list<ContextualizedEmbedResponseDataItem>>
         docs: >-
           An array of contextualized embedding results, one for each input
           document.
@@ -803,7 +803,7 @@ service:
           response:
             body:
               object: object
-              results:
+              data:
                 - embeddings:
                     - {}
                   document_index: 1

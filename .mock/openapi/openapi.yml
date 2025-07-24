@@ -700,7 +700,7 @@ paths:
                   object:
                     type: string
                     description: The object type, which is always "contextualized_embeddings".
-                  results:
+                  data:
                     type: array
                     description: An array of contextualized embedding results, one for each input document.
                     items:

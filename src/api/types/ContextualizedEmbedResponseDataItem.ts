@@ -4,9 +4,9 @@
 
 import * as VoyageAI from "../index";
 
-export interface ContextualizedEmbedResponseResultsItem {
+export interface ContextualizedEmbedResponseDataItem {
     /** An array of embeddings for each chunk in the document. */
-    embeddings?: VoyageAI.ContextualizedEmbedResponseResultsItemEmbeddingsItem[];
+    embeddings?: VoyageAI.ContextualizedEmbedResponseDataItemEmbeddingsItem[];
     /** The index of this document within the input list. */
     documentIndex?: number;
 }
