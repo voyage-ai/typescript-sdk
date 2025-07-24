@@ -11,15 +11,7 @@ describe("test env compatibility", () => {
                         rules: [
                             {
                                 test: /\.tsx?$/,
-                                use: {
-                                    loader: "ts-loader",
-                                    options: {
-                                        transpileOnly: true,
-                                        compilerOptions: {
-                                            skipLibCheck: true,
-                                        },
-                                    },
-                                },
+                                use: "ts-loader",
                                 exclude: /node_modules/,
                             },
                         ],
