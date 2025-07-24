@@ -3,8 +3,8 @@
  */
 
 export class VoyageAITimeoutError extends Error {
-    constructor(message: string) {
-        super(message);
+    constructor() {
+        super("Timeout");
         Object.setPrototypeOf(this, VoyageAITimeoutError.prototype);
     }
 }

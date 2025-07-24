@@ -1,4 +1,4 @@
-export * as VoyageAI from "./api/index.js";
-export { VoyageAIError, VoyageAITimeoutError } from "./errors/index.js";
-export { VoyageAIClient } from "./Client.js";
-export { VoyageAIEnvironment } from "./environments.js";
+export * as VoyageAI from "./api";
+export { VoyageAIClient } from "./Client";
+export { VoyageAIEnvironment } from "./environments";
+export { VoyageAIError, VoyageAITimeoutError } from "./errors";
