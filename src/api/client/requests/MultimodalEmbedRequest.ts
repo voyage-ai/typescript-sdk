@@ -72,13 +72,9 @@ export interface MultimodalEmbedRequest {
      *   </details>
      *   </li>
      * </ul>
-     *
      */
     inputs: MultimodalEmbedRequest.Inputs.Item[];
-    /**
-     * Name of the model. Currently, the only supported model is `voyage-multimodal-3`.
-     *
-     */
+    /** Name of the model. Currently, the only supported model is `voyage-multimodal-3`. */
     model: string;
     /**
      * Type of the input text. Defaults to `null`. Other options: `query`, `document`.
@@ -88,18 +84,11 @@ export interface MultimodalEmbedRequest {
      *     <li> For&nbsp;<code class="rdmd-code lang- theme-light" data-lang="" name="" tabindex="0"><span class="cm-s-neo" data-testid="SyntaxHighlighter">document</span></code>, the prompt is <i>"Represent the query for retrieving supporting documents:&nbsp;".</i> </li>
      *   </ul>
      * <ul></ul></ul>
-     *
      */
     input_type?: MultimodalEmbedRequest.InputType;
-    /**
-     * Whether to truncate the input texts to fit within the context length. Defaults to `true`. <ul>  <li> If `true`, over-length input texts will be truncated to fit within the context length, before vectorized by the embedding model. </li>  <li> If `false`, an error will be raised if any given text exceeds the context length. </li>  </ul>
-     *
-     */
+    /** Whether to truncate the input texts to fit within the context length. Defaults to `true`. <ul>  <li> If `true`, over-length input texts will be truncated to fit within the context length, before vectorized by the embedding model. </li>  <li> If `false`, an error will be raised if any given text exceeds the context length. </li>  </ul> */
     truncation?: boolean;
-    /**
-     * Format in which the embeddings are encoded. We support two options:  <ul> <li> If not specified (defaults to `null`): the embeddings are represented as lists of floating-point numbers; </li>  <li> `base64`: the embeddings are compressed to [base64](https://docs.python.org/3/library/base64.html) encodings. </li>  </ul>
-     *
-     */
+    /** Format in which the embeddings are encoded. We support two options:  <ul> <li> If not specified (defaults to `null`): the embeddings are represented as lists of floating-point numbers; </li>  <li> `base64`: the embeddings are compressed to [base64](https://docs.python.org/3/library/base64.html) encodings. </li>  </ul> */
     encoding_format?: "base64";
 }
 

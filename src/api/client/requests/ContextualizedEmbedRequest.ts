@@ -10,30 +10,15 @@
  *     }
  */
 export interface ContextualizedEmbedRequest {
-    /**
-     * A list of documents, where each document is represented as a list of text chunks (strings). <ul> <li> The maximum number of inputs (documents) is 1,000. </li> <li> The total number of chunks across all documents cannot exceed 16,000. </li> <li> The total number of tokens across all inputs cannot exceed 120,000. </li> </ul>
-     *
-     */
+    /** A list of documents, where each document is represented as a list of text chunks (strings). <ul> <li> The maximum number of inputs (documents) is 1,000. </li> <li> The total number of chunks across all documents cannot exceed 16,000. </li> <li> The total number of tokens across all inputs cannot exceed 120,000. </li> </ul> */
     inputs: string[][];
-    /**
-     * Name of the model. Currently, the recommended model is `voyage-context-3`, which has a context  length of 32,000 tokens and supports output dimensions of 256, 512, 1024, and 2048.
-     *
-     */
+    /** Name of the model. Currently, the recommended model is `voyage-context-3`, which has a context  length of 32,000 tokens and supports output dimensions of 256, 512, 1024, and 2048. */
     model: string;
-    /**
-     * Type of the input text. Defaults to `null`. Other options: `query`, `document`. <ul> <li> When `input_type` is `null`, the embedding model directly converts your input data into  numerical vectors. </li> <li> For retrieval/search purposes, we recommend specifying whether your inputs are intended  as queries or documents by setting `input_type` to `query` or `document`, respectively. </li> <li> When specified, Voyage prepends a specific prompt to your input before vectorizing it,  helping the model create more effective vectors tailored for retrieval/search tasks. </li> </ul>
-     *
-     */
+    /** Type of the input text. Defaults to `null`. Other options: `query`, `document`. <ul> <li> When `input_type` is `null`, the embedding model directly converts your input data into  numerical vectors. </li> <li> For retrieval/search purposes, we recommend specifying whether your inputs are intended  as queries or documents by setting `input_type` to `query` or `document`, respectively. </li> <li> When specified, Voyage prepends a specific prompt to your input before vectorizing it,  helping the model create more effective vectors tailored for retrieval/search tasks. </li> </ul> */
     input_type?: ContextualizedEmbedRequest.InputType;
-    /**
-     * The number of dimensions for resulting output embeddings. Defaults to 1024 for `voyage-context-3`. Supported dimensions: 256, 512, 1024, 2048.
-     *
-     */
+    /** The number of dimensions for resulting output embeddings. Defaults to 1024 for `voyage-context-3`. Supported dimensions: 256, 512, 1024, 2048. */
     output_dimension?: number;
-    /**
-     * The data type for the embeddings to be returned. Defaults to `float`. Other options: `int8`, `uint8`, `binary`, `ubinary`.
-     *
-     */
+    /** The data type for the embeddings to be returned. Defaults to `float`. Other options: `int8`, `uint8`, `binary`, `ubinary`. */
     output_dtype?: ContextualizedEmbedRequest.OutputDtype;
 }
 
