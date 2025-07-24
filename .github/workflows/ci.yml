@@ -14,7 +14,17 @@ jobs:
               uses: actions/setup-node@v3
 
             - name: Compile
-              run: yarn && yarn add --dev @types/babel__traverse@7.20.6 && yarn build
+              run: |
+                yarn install
+                echo 'Adding resolutions to package.json...'
+                node -e "
+                  const fs = require('fs');
+                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
+                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+                "
+                yarn install --force
+                yarn build
 
     unit-test:
         runs-on: ubuntu-latest
@@ -26,11 +36,20 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
             
-            - name: Install dependencies
-              run: yarn install
+            - name: Install dependencies and fix TypeScript compatibility
+              run: |
+                yarn install
+                echo 'Adding resolutions to package.json...'
+                node -e "
+                  const fs = require('fs');
+                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
+                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+                "
+                yarn install --force
 
             - name: Unit Test
-              run: yarn jest tests/unit --testPathIgnorePatterns="webpack.test.ts"
+              run: yarn jest tests/unit
 
     integration-test:
         runs-on: ubuntu-latest
@@ -60,13 +79,22 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
-            - name: Install dependencies
-              run: yarn install
+            - name: Install dependencies and fix TypeScript compatibility
+              run: |
+                yarn install
+                echo 'Adding resolutions to package.json...'
+                node -e "
+                  const fs = require('fs');
+                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
+                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+                "
+                yarn install --force
 
             - name: Integration Server Test
               env:
                 VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
-              run: yarn jest --coverage tests/unit tests/integration tests/custom --testPathIgnorePatterns="webpack.test.ts"
+              run: yarn jest --coverage tests/unit tests/integration tests/custom
 
     publish:
         needs: [compile, unit-test, integration-test]
@@ -80,11 +108,17 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
-            - name: Install dependencies
-              run: yarn install
-
-            - name: Fix TypeScript compatibility  
-              run: yarn add --dev @types/babel__traverse@7.20.6
+            - name: Install dependencies and fix TypeScript compatibility
+              run: |
+                yarn install
+                echo 'Adding resolutions to package.json...'
+                node -e "
+                  const fs = require('fs');
+                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
+                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+                "
+                yarn install --force
 
             - name: Build
               run: yarn build
