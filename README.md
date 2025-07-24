@@ -51,7 +51,7 @@ following namespace:
 ```typescript
 import { VoyageAI } from "voyageai";
 
-const request: VoyageAI.EmbedRequest = {
+const request: VoyageAI.ContextualizedembeddingsApiRequest = {
     ...
 };
 ```

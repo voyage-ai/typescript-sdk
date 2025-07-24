@@ -614,6 +614,201 @@ paths:
                 }'
         samples-languages:
           - shell
+  /contextualizedembeddings:
+    post:
+      tags:
+        - Endpoints
+      summary: Contextualized embeddings
+      description:
+        The Voyage contextualized embeddings endpoint receives as input a list of documents (each document is a list of chunks), 
+        and returns contextualized embeddings for each chunk. The embeddings capture both the local chunk content and the 
+        global document context, making them particularly effective for retrieval tasks where understanding document-level 
+        context is important.
+      operationId: contextualizedembeddings-api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - inputs
+                - model
+              properties:
+                inputs:
+                  type: array
+                  description: >
+                    A list of documents, where each document is represented as a list of text chunks (strings).
+                    <ul>
+                    <li> The maximum number of inputs (documents) is 1,000. </li>
+                    <li> The total number of chunks across all documents cannot exceed 16,000. </li>
+                    <li> The total number of tokens across all inputs cannot exceed 120,000. </li>
+                    </ul>
+                  items:
+                    type: array
+                    description: A document represented as a list of text chunks.
+                    items:
+                      type: string
+                      description: A text chunk within the document.
+                model:
+                  type: string
+                  description: >
+                    Name of the model. Currently, the recommended model is `voyage-context-3`, which has a context 
+                    length of 32,000 tokens and supports output dimensions of 256, 512, 1024, and 2048.
+                input_type:
+                  type: string
+                  description: >
+                    Type of the input text. Defaults to `null`. Other options: `query`, `document`.
+                    <ul>
+                    <li> When `input_type` is `null`, the embedding model directly converts your input data into 
+                    numerical vectors. </li>
+                    <li> For retrieval/search purposes, we recommend specifying whether your inputs are intended 
+                    as queries or documents by setting `input_type` to `query` or `document`, respectively. </li>
+                    <li> When specified, Voyage prepends a specific prompt to your input before vectorizing it, 
+                    helping the model create more effective vectors tailored for retrieval/search tasks. </li>
+                    </ul>
+                  enum:
+                    - query
+                    - document
+                output_dimension:
+                  type: integer
+                  description: >
+                    The number of dimensions for resulting output embeddings. Defaults to 1024 for `voyage-context-3`.
+                    Supported dimensions: 256, 512, 1024, 2048.
+                  enum:
+                    - 256
+                    - 512
+                    - 1024
+                    - 2048
+                output_dtype:
+                  type: string
+                  description: >
+                    The data type for the embeddings to be returned. Defaults to `float`.
+                    Other options: `int8`, `uint8`, `binary`, `ubinary`.
+                  enum:
+                    - float
+                    - int8
+                    - uint8
+                    - binary
+                    - ubinary
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  object:
+                    type: string
+                    description: The object type, which is always "contextualized_embeddings".
+                  results:
+                    type: array
+                    description: An array of contextualized embedding results, one for each input document.
+                    items:
+                      type: object
+                      properties:
+                        embeddings:
+                          type: array
+                          description: An array of embeddings for each chunk in the document.
+                          items:
+                            type: object
+                            properties:
+                              object:
+                                type: string
+                                description: The object type, which is always "embedding".
+                              embedding:
+                                type: array
+                                description: >
+                                  The contextualized embedding vector for this chunk, represented as an array of numbers.
+                                  The data type depends on the `output_dtype` parameter: floating-point numbers for `float`,
+                                  integers for `int8`, `uint8`, `binary`, and `ubinary`.
+                                items:
+                                  type: number
+                              index:
+                                type: integer
+                                description: >
+                                  The index of this chunk within the document.
+                        document_index:
+                          type: integer
+                          description: The index of this document within the input list.
+                  model:
+                    type: string
+                    description: Name of the model used.
+                  usage:
+                    type: object
+                    properties:
+                      total_tokens:
+                        type: integer
+                        description: The total number of tokens used for computing the contextualized embeddings.
+              examples:
+                Success:
+                  value: >
+                    {
+                      "object": "contextualized_embeddings",
+                      "results": [
+                        {
+                          "embeddings": [
+                            {
+                              "object": "embedding",
+                              "embedding": [0.0123, -0.0456, 0.0789, "...", 0.0321],
+                              "index": 0
+                            },
+                            {
+                              "object": "embedding", 
+                              "embedding": [-0.0987, 0.0654, -0.0321, "...", 0.0123],
+                              "index": 1
+                            }
+                          ],
+                          "document_index": 0
+                        }
+                      ],
+                      "model": "voyage-context-3",
+                      "usage": {
+                        "total_tokens": 1250
+                      }
+                    }
+        '4XX':
+          description: >
+            Client error 
+            <p> This indicates an issue with the request format or frequency. Please see our 
+            [Error Codes](https://docs.voyageai.com/docs/error-codes) guide. </p>
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    type: string
+                    description: The error message.
+        '5XX':
+          description: >
+            Server Error
+            <p> This indicates our servers are experiencing high traffic or having an unexpected
+            issue. Please see our 
+            [Error Codes](https://docs.voyageai.com/docs/error-codes) guide. </p>
+      x-readme:
+        code-samples:
+          - language: shell
+            code: |-
+              curl --request POST \
+                   --url https://api.voyageai.com/v1/contextualizedembeddings \
+                   --header "Authorization: Bearer $VOYAGE_API_KEY" \
+                   --header "content-type: application/json" \
+                   --data '
+              {
+                "inputs": [
+                  [
+                    "This is the first chunk of the first document.",
+                    "This is the second chunk of the first document."
+                  ],
+                  [
+                    "This is the first chunk of the second document.",
+                    "This is the second chunk of the second document."
+                  ]
+                ],
+                "model": "voyage-context-3"
+              }
+              '
+        samples-languages:
+          - shell
 
 x-readme:
   headers: []
