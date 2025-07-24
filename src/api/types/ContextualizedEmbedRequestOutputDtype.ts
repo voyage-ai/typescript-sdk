@@ -5,9 +5,9 @@
 /**
  * The data type for the embeddings to be returned. Defaults to `float`. Other options: `int8`, `uint8`, `binary`, `ubinary`.
  */
-export type ContextualizedembeddingsApiRequestOutputDtype = "float" | "int8" | "uint8" | "binary" | "ubinary";
+export type ContextualizedEmbedRequestOutputDtype = "float" | "int8" | "uint8" | "binary" | "ubinary";
 
-export const ContextualizedembeddingsApiRequestOutputDtype = {
+export const ContextualizedEmbedRequestOutputDtype = {
     Float: "float",
     Int8: "int8",
     Uint8: "uint8",

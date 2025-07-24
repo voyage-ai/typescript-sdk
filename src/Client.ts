@@ -8,7 +8,6 @@ import * as VoyageAI from "./api/index";
 import * as serializers from "./serialization/index";
 import urlJoin from "url-join";
 import * as errors from "./errors/index";
-import { Endpoints } from "./api/resources/endpoints/client/Client";
 
 export declare namespace VoyageAIClient {
     interface Options {
@@ -241,10 +240,74 @@ export class VoyageAIClient {
         }
     }
 
-    protected _endpoints: Endpoints | undefined;
+    /**
+     * The Voyage contextualized embeddings endpoint receives as input a list of documents (each document is a list of chunks), and returns contextualized embeddings for each chunk. The embeddings capture both the local chunk content and the global document context, making them particularly effective for retrieval tasks where understanding document-level context is important.
+     *
+     * @param {VoyageAI.ContextualizedEmbedRequest} request
+     * @param {VoyageAIClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @example
+     *     await client.contextualizedEmbed({
+     *         inputs: [["inputs"]],
+     *         model: "model"
+     *     })
+     */
+    public async contextualizedEmbed(
+        request: VoyageAI.ContextualizedEmbedRequest,
+        requestOptions?: VoyageAIClient.RequestOptions
+    ): Promise<VoyageAI.ContextualizedEmbedResponse> {
+        const _response = await (this._options.fetcher ?? core.fetcher)({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.environment)) ?? environments.VoyageAIEnvironment.Default,
+                "contextualizedembeddings"
+            ),
+            method: "POST",
+            headers: {
+                Authorization: await this._getAuthorizationHeader(),
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "voyageai",
+                "X-Fern-SDK-Version": "0.0.0",
+                "User-Agent": "voyageai/0.0.0",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.ContextualizedEmbedRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return serializers.ContextualizedEmbedResponse.parseOrThrow(_response.body, {
+                unrecognizedObjectKeys: "passthrough",
+                allowUnrecognizedUnionMembers: true,
+                allowUnrecognizedEnumValues: true,
+                skipValidation: true,
+                breadcrumbsPrefix: ["response"],
+            });
+        }
 
-    public get endpoints(): Endpoints {
-        return (this._endpoints ??= new Endpoints(this._options));
+        if (_response.error.reason === "status-code") {
+            throw new errors.VoyageAIError({
+                statusCode: _response.error.statusCode,
+                body: _response.error.body,
+            });
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.VoyageAIError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                });
+            case "timeout":
+                throw new errors.VoyageAITimeoutError();
+            case "unknown":
+                throw new errors.VoyageAIError({
+                    message: _response.error.errorMessage,
+                });
+        }
     }
 
     protected async _getAuthorizationHeader(): Promise<string> {

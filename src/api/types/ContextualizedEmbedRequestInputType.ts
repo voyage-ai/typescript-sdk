@@ -5,9 +5,9 @@
 /**
  * Type of the input text. Defaults to `null`. Other options: `query`, `document`. <ul> <li> When `input_type` is `null`, the embedding model directly converts your input data into  numerical vectors. </li> <li> For retrieval/search purposes, we recommend specifying whether your inputs are intended  as queries or documents by setting `input_type` to `query` or `document`, respectively. </li> <li> When specified, Voyage prepends a specific prompt to your input before vectorizing it,  helping the model create more effective vectors tailored for retrieval/search tasks. </li> </ul>
  */
-export type ContextualizedembeddingsApiRequestInputType = "query" | "document";
+export type ContextualizedEmbedRequestInputType = "query" | "document";
 
-export const ContextualizedembeddingsApiRequestInputType = {
+export const ContextualizedEmbedRequestInputType = {
     Query: "query",
     Document: "document",
 } as const;
