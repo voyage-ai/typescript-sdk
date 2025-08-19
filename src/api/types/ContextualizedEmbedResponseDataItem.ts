@@ -5,8 +5,10 @@
 import * as VoyageAI from "../index";
 
 export interface ContextualizedEmbedResponseDataItem {
+    /** The object type, which is always "list". */
+    object?: string;
     /** An array of embeddings for each chunk in the document. */
     embeddings?: VoyageAI.ContextualizedEmbedResponseDataItemEmbeddingsItem[];
     /** The index of this document within the input list. */
-    documentIndex?: number;
+    index?: number;
 }

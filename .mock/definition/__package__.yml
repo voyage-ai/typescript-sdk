@@ -288,10 +288,13 @@ types:
     inline: true
   ContextualizedEmbedResponseDataItem:
     properties:
+      object:
+        type: optional<string>
+        docs: The object type, which is always "list".
       embeddings:
         type: optional<list<ContextualizedEmbedResponseDataItemEmbeddingsItem>>
         docs: An array of embeddings for each chunk in the document.
-      document_index:
+      index:
         type: optional<integer>
         docs: The index of this document within the input list.
     source:
@@ -311,7 +314,7 @@ types:
     properties:
       object:
         type: optional<string>
-        docs: The object type, which is always "contextualized_embeddings".
+        docs: The object type, which is always "list".
       data:
         type: optional<list<ContextualizedEmbedResponseDataItem>>
         docs: >-
@@ -804,9 +807,10 @@ service:
             body:
               object: object
               data:
-                - embeddings:
+                - object: object
+                  embeddings:
                     - {}
-                  document_index: 1
+                  index: 1
               model: model
               usage:
                 total_tokens: 1

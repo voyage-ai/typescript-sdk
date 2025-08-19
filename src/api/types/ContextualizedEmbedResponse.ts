@@ -5,7 +5,7 @@
 import * as VoyageAI from "../index";
 
 export interface ContextualizedEmbedResponse {
-    /** The object type, which is always "contextualized_embeddings". */
+    /** The object type, which is always "list". */
     object?: string;
     /** An array of contextualized embedding results, one for each input document. */
     data?: VoyageAI.ContextualizedEmbedResponseDataItem[];

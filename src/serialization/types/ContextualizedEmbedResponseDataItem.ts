@@ -11,13 +11,15 @@ export const ContextualizedEmbedResponseDataItem: core.serialization.ObjectSchem
     serializers.ContextualizedEmbedResponseDataItem.Raw,
     VoyageAI.ContextualizedEmbedResponseDataItem
 > = core.serialization.object({
+    object: core.serialization.string().optional(),
     embeddings: core.serialization.list(ContextualizedEmbedResponseDataItemEmbeddingsItem).optional(),
-    documentIndex: core.serialization.property("document_index", core.serialization.number().optional()),
+    index: core.serialization.number().optional(),
 });
 
 export declare namespace ContextualizedEmbedResponseDataItem {
     interface Raw {
+        object?: string | null;
         embeddings?: ContextualizedEmbedResponseDataItemEmbeddingsItem.Raw[] | null;
-        document_index?: number | null;
+        index?: number | null;
     }
 }

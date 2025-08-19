@@ -699,13 +699,16 @@ paths:
                 properties:
                   object:
                     type: string
-                    description: The object type, which is always "contextualized_embeddings".
+                    description: The object type, which is always "list".
                   data:
                     type: array
                     description: An array of contextualized embedding results, one for each input document.
                     items:
                       type: object
                       properties:
+                        object:
+                          type: string
+                          description: The object type, which is always "list".
                         embeddings:
                           type: array
                           description: An array of embeddings for each chunk in the document.
@@ -727,7 +730,7 @@ paths:
                                 type: integer
                                 description: >
                                   The index of this chunk within the document.
-                        document_index:
+                        index:
                           type: integer
                           description: The index of this document within the input list.
                   model:
