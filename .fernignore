@@ -3,3 +3,4 @@ tests/custom
 tests/integration
 .github/workflows/ci.yml
 jest.config.js
+LICENSE
