@@ -8,7 +8,7 @@ export interface ContextualizedEmbedResponseDataItem {
     /** The object type, which is always "list". */
     object?: string;
     /** An array of embeddings for each chunk in the document. */
-    embeddings?: VoyageAI.ContextualizedEmbedResponseDataItemEmbeddingsItem[];
+    data?: VoyageAI.ContextualizedEmbedResponseDataItemDataItem[];
     /** The index of this document within the input list. */
     index?: number;
 }

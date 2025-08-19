@@ -5,21 +5,21 @@
 import * as serializers from "../index";
 import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
-import { ContextualizedEmbedResponseDataItemEmbeddingsItem } from "./ContextualizedEmbedResponseDataItemEmbeddingsItem";
+import { ContextualizedEmbedResponseDataItemDataItem } from "./ContextualizedEmbedResponseDataItemDataItem";
 
 export const ContextualizedEmbedResponseDataItem: core.serialization.ObjectSchema<
     serializers.ContextualizedEmbedResponseDataItem.Raw,
     VoyageAI.ContextualizedEmbedResponseDataItem
 > = core.serialization.object({
     object: core.serialization.string().optional(),
-    embeddings: core.serialization.list(ContextualizedEmbedResponseDataItemEmbeddingsItem).optional(),
+    data: core.serialization.list(ContextualizedEmbedResponseDataItemDataItem).optional(),
     index: core.serialization.number().optional(),
 });
 
 export declare namespace ContextualizedEmbedResponseDataItem {
     interface Raw {
         object?: string | null;
-        embeddings?: ContextualizedEmbedResponseDataItemEmbeddingsItem.Raw[] | null;
+        data?: ContextualizedEmbedResponseDataItemDataItem.Raw[] | null;
         index?: number | null;
     }
 }

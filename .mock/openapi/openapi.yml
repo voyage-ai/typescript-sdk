@@ -709,7 +709,7 @@ paths:
                         object:
                           type: string
                           description: The object type, which is always "list".
-                        embeddings:
+                        data:
                           type: array
                           description: An array of embeddings for each chunk in the document.
                           items:

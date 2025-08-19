@@ -6,16 +6,16 @@ import * as serializers from "../index";
 import * as VoyageAI from "../../api/index";
 import * as core from "../../core";
 
-export const ContextualizedEmbedResponseDataItemEmbeddingsItem: core.serialization.ObjectSchema<
-    serializers.ContextualizedEmbedResponseDataItemEmbeddingsItem.Raw,
-    VoyageAI.ContextualizedEmbedResponseDataItemEmbeddingsItem
+export const ContextualizedEmbedResponseDataItemDataItem: core.serialization.ObjectSchema<
+    serializers.ContextualizedEmbedResponseDataItemDataItem.Raw,
+    VoyageAI.ContextualizedEmbedResponseDataItemDataItem
 > = core.serialization.object({
     object: core.serialization.string().optional(),
     embedding: core.serialization.list(core.serialization.number()).optional(),
     index: core.serialization.number().optional(),
 });
 
-export declare namespace ContextualizedEmbedResponseDataItemEmbeddingsItem {
+export declare namespace ContextualizedEmbedResponseDataItemDataItem {
     interface Raw {
         object?: string | null;
         embedding?: number[] | null;

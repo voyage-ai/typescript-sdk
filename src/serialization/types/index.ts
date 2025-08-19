@@ -15,7 +15,7 @@ export * from "./MultimodalEmbedResponseUsage";
 export * from "./MultimodalEmbedResponse";
 export * from "./ContextualizedEmbedRequestInputType";
 export * from "./ContextualizedEmbedRequestOutputDtype";
-export * from "./ContextualizedEmbedResponseDataItemEmbeddingsItem";
+export * from "./ContextualizedEmbedResponseDataItemDataItem";
 export * from "./ContextualizedEmbedResponseDataItem";
 export * from "./ContextualizedEmbedResponseUsage";
 export * from "./ContextualizedEmbedResponse";

@@ -267,7 +267,7 @@ types:
     inline: true
     source:
       openapi: openapi/openapi.yml
-  ContextualizedEmbedResponseDataItemEmbeddingsItem:
+  ContextualizedEmbedResponseDataItemDataItem:
     properties:
       object:
         type: optional<string>
@@ -291,8 +291,8 @@ types:
       object:
         type: optional<string>
         docs: The object type, which is always "list".
-      embeddings:
-        type: optional<list<ContextualizedEmbedResponseDataItemEmbeddingsItem>>
+      data:
+        type: optional<list<ContextualizedEmbedResponseDataItemDataItem>>
         docs: An array of embeddings for each chunk in the document.
       index:
         type: optional<integer>
@@ -808,7 +808,7 @@ service:
               object: object
               data:
                 - object: object
-                  embeddings:
+                  data:
                     - {}
                   index: 1
               model: model
