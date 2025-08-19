@@ -1,11 +1,10 @@
 {
     "name": "voyageai",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "private": false,
     "repository": "https://github.com/voyage-ai/typescript-sdk",
     "main": "./index.js",
     "types": "./index.d.ts",
-    "license": "MIT",
     "scripts": {
         "format": "prettier . --write --ignore-unknown",
         "build": "tsc",
