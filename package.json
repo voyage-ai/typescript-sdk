@@ -5,6 +5,7 @@
     "repository": "https://github.com/voyage-ai/typescript-sdk",
     "main": "./index.js",
     "types": "./index.d.ts",
+    "license": "MIT",
     "scripts": {
         "format": "prettier . --write --ignore-unknown",
         "build": "tsc",
