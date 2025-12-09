@@ -3,7 +3,7 @@
  */
 
 export interface MultimodalEmbedRequestInputsItemContentItem {
-    /** Specifies the type of the piece of the content.  Allowed values are `text`, `image_url`, or `image_base64`. */
+    /** Specifies the type of the piece of the content.  Allowed values are `text`, `image_url`, `image_base64`, `video_url`, or `video_base64`. */
     type: string;
     /** Only present when type is `text`. The value should be a text string. */
     text?: string;
@@ -11,4 +11,8 @@ export interface MultimodalEmbedRequestInputsItemContentItem {
     imageBase64?: string;
     /** Only present when `type` is `image_url`. The value should be a URL linking to the image.  We support PNG, JPEG, WEBP, and GIF images. */
     imageUrl?: string;
+    /** Only present when type is `video_base64`. The value should be a Base64-encoded video in the  data URL format `data:[<mediatype>];base64,<data>`. Currently supported mediatypes are:  `video/mp4`. Currently, the `voyage-multimodal-3.5` model supports this input type. */
+    videoBase64?: string;
+    /** Only present when `type` is `video_url`. The value should be a URL linking to the video.  We support MP4 images. Currently, the `voyage-multimodal-3.5` model supports this input type. */
+    videoUrl?: string;
 }

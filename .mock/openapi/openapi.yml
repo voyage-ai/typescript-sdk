@@ -448,7 +448,7 @@ paths:
                               type: string
                               description: >
                                 Specifies the type of the piece of the content. 
-                                Allowed values are `text`, `image_url`, or `image_base64`.
+                                Allowed values are `text`, `image_url`, `image_base64`, `video_url`, or `video_base64`.
                             text:
                               type: string
                               description: Only present when type is `text`. The value should be a text string.
@@ -463,10 +463,21 @@ paths:
                               description: >
                                 Only present when `type` is `image_url`. The value should be a URL linking to the image. 
                                 We support PNG, JPEG, WEBP, and GIF images.
+                            video_base64:
+                              type: string
+                              description: >
+                                Only present when type is `video_base64`. The value should be a Base64-encoded video in the 
+                                data URL format `data:[<mediatype>];base64,<data>`. Currently supported mediatypes are: 
+                                `video/mp4`. Currently, the `voyage-multimodal-3.5` model supports this input type.
+                            video_url:
+                              type: string
+                              description: >
+                                Only present when `type` is `video_url`. The value should be a URL linking to the video. 
+                                We support MP4 images. Currently, the `voyage-multimodal-3.5` model supports this input type.
                 model:
                   type: string
                   description: >
-                    Name of the model. Currently, the only supported model is `voyage-multimodal-3`.
+                    Name of the model. Supported models are: `voyage-multimodal-3` and `voyage-multimodal-3.5`.
                 input_type:
                   type: string
                   description: >

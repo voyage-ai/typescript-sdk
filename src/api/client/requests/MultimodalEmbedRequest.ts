@@ -78,7 +78,7 @@ export interface MultimodalEmbedRequest {
      */
     inputs: VoyageAI.MultimodalEmbedRequestInputsItem[];
     /**
-     * Name of the model. Currently, the only supported model is `voyage-multimodal-3`.
+     * Name of the model. Supported models are: `voyage-multimodal-3` and `voyage-multimodal-3.5`.
      *
      */
     model: string;

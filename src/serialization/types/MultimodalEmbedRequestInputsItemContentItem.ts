@@ -14,6 +14,8 @@ export const MultimodalEmbedRequestInputsItemContentItem: core.serialization.Obj
     text: core.serialization.string().optional(),
     imageBase64: core.serialization.property("image_base64", core.serialization.string().optional()),
     imageUrl: core.serialization.property("image_url", core.serialization.string().optional()),
+    videoBase64: core.serialization.property("video_base64", core.serialization.string().optional()),
+    videoUrl: core.serialization.property("video_url", core.serialization.string().optional()),
 });
 
 export declare namespace MultimodalEmbedRequestInputsItemContentItem {
@@ -22,5 +24,7 @@ export declare namespace MultimodalEmbedRequestInputsItemContentItem {
         text?: string | null;
         image_base64?: string | null;
         image_url?: string | null;
+        video_base64?: string | null;
+        video_url?: string | null;
     }
 }

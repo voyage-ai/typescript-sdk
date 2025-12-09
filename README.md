@@ -5,6 +5,22 @@
 
 The Voyage TypeScript library provides convenient access to the Voyage APIs from TypeScript.
 
+## Table of Contents
+
+-   [Documentation](#documentation)
+-   [Installation](#installation)
+-   [Batch Request](#batch-request)
+-   [Usage](#usage)
+-   [Request and Response Types](#request-and-response-types)
+-   [Exception Handling](#exception-handling)
+-   [Advanced](#advanced)
+    -   [Retries](#retries)
+    -   [Timeouts](#timeouts)
+    -   [Aborting Requests](#aborting-requests)
+    -   [Runtime Compatibility](#runtime-compatibility)
+-   [Contributing](#contributing)
+-   [Reference](#reference)
+
 ## Documentation
 
 API reference documentation is available [here](https://docs.voyageai.com/reference/embeddings-api).
@@ -43,7 +59,7 @@ await client.embed({
 });
 ```
 
-## Request And Response Types
+## Request and Response Types
 
 The SDK exports all request and response types as TypeScript interfaces. Simply import them with the
 following namespace:
