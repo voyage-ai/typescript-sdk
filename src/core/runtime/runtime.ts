@@ -73,25 +73,6 @@ export interface Runtime {
 }
 
 function evaluateRuntime(): Runtime {
-    if (isBrowser) {
-        return {
-            type: "browser",
-            version: window.navigator.userAgent,
-        };
-    }
-
-    if (isCloudflare) {
-        return {
-            type: "workerd",
-        };
-    }
-
-    if (isWebWorker) {
-        return {
-            type: "web-worker",
-        };
-    }
-
     if (isDeno) {
         return {
             type: "deno",
@@ -111,6 +92,25 @@ function evaluateRuntime(): Runtime {
             type: "node",
             version: process.versions.node,
             parsedVersion: Number(process.versions.node.split(".")[0]),
+        };
+    }
+
+    if (isBrowser) {
+        return {
+            type: "browser",
+            version: window.navigator.userAgent,
+        };
+    }
+
+    if (isCloudflare) {
+        return {
+            type: "workerd",
+        };
+    }
+
+    if (isWebWorker) {
+        return {
+            type: "web-worker",
         };
     }
 
