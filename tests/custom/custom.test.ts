@@ -1,9 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { VoyageAIClient as Client } from "../../src/Client";
-import { FetchFunction, Fetcher } from "../../src/core/fetcher/Fetcher";
 import { VoyageAIError, VoyageAITimeoutError } from "../../src/errors";
-import { MultimodalEmbedRequestInputsItem } from "../../src/serialization";
 
 const documents = [
     "The Mediterranean diet emphasizes fish, olive oil, and vegetables, believed to reduce chronic diseases.",
@@ -112,7 +110,7 @@ describe("Client full integration tests", () => {
         expect(result.data?.length).toBe(documents.length);
     });
 
-    test("Embeddings - happy path, output_dimension", async () => {
+    test("Embeddings - happy path, outputDimension", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed({ input: documents, model: "voyage-3-large", outputDimension: 2048 });
         expect(result.model).toBe("voyage-3-large");
@@ -120,7 +118,7 @@ describe("Client full integration tests", () => {
         expect(result.data?.[0].embedding?.length).toBe(2048);
     });
 
-    test("Embeddings - happy path, output_dimension & output_dtype", async () => {
+    test("Embeddings - happy path, outputDimension & outputDtype", async () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed({ input: documents, model: "voyage-3-large", outputDimension: 2048, outputDtype: "binary" });
         expect(result.model).toBe("voyage-3-large");
@@ -173,7 +171,7 @@ describe("Client full integration tests", () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.embed(
             { input: documents, model: "voyage-3-large" },
-            { timeoutInSeconds: 10000, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
+            { timeoutInSeconds: 10000, maxRetries: 1, abortSignal: new AbortController().signal }
 
         );
         expect(result.model).toBe("voyage-3-large");
@@ -184,7 +182,7 @@ describe("Client full integration tests", () => {
         const client = new Client({ apiKey: process.env.VOYAGE_API_KEY || "" });
         const result = await client.rerank(
             { query: "When is the Apple's conference call scheduled?", documents: documents, model: "rerank-2" },
-            { timeoutInSeconds: 10000, maxRetries: 1, abortSignal: {dispatchEvent: (event: Event) => {return true}, removeEventListener: () => {}, addEventListener: () => {}, onabort: null, aborted: false} }
+            { timeoutInSeconds: 10000, maxRetries: 1, abortSignal: new AbortController().signal }
         );
         expect(result.model).toBe("rerank-2");
         expect(result.data?.length).toBe(documents.length);
@@ -212,18 +210,12 @@ describe("Client full integration tests", () => {
     });
 
     test("Embeddings - NonJson error", async () => {
-        const errorFetcher: FetchFunction = async (args: Fetcher.Args) => {
-            return {
-                ok: false,
-                error: {
-                    reason: "non-json",
-                    statusCode: 401,
-                    rawBody: "raw non-json body",
-                },
-            };
-        };
+        const errorFetch = async () => new Response("raw non-json body", {
+            status: 401,
+            headers: { "Content-Type": "text/plain" },
+        });
         await expect(async () => {
-            const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
+            const client = new Client({ apiKey: "not a valid key", fetch: errorFetch as any });
             await client.embed({
                 input: documents,
                 model: "voyage-3-large",
@@ -232,18 +224,12 @@ describe("Client full integration tests", () => {
     });
 
     test("Reranking - NonJson error", async () => {
-        const errorFetcher: FetchFunction = async (args: Fetcher.Args) => {
-            return {
-                ok: false,
-                error: {
-                    reason: "non-json",
-                    statusCode: 401,
-                    rawBody: "raw non-json body",
-                },
-            };
-        };
+        const errorFetch = async () => new Response("raw non-json body", {
+            status: 401,
+            headers: { "Content-Type": "text/plain" },
+        });
         await expect(async () => {
-            const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
+            const client = new Client({ apiKey: "not a valid key", fetch: errorFetch as any });
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
@@ -253,16 +239,13 @@ describe("Client full integration tests", () => {
     });
 
     test("Embeddings - Timeout error", async () => {
-        const errorFetcher: FetchFunction = async (args: Fetcher.Args) => {
-            return {
-                ok: false,
-                error: {
-                    reason: "timeout",
-                },
-            };
+        const errorFetch = async () => {
+            const error = new Error("The operation was aborted");
+            error.name = "AbortError";
+            throw error;
         };
         await expect(async () => {
-            const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
+            const client = new Client({ apiKey: "not a valid key", fetch: errorFetch as any });
             await client.embed({
                 input: documents,
                 model: "voyage-3-large",
@@ -271,16 +254,13 @@ describe("Client full integration tests", () => {
     });
 
     test("Reranking - Timeout error", async () => {
-        const errorFetcher: FetchFunction = async (args: Fetcher.Args) => {
-            return {
-                ok: false,
-                error: {
-                    reason: "timeout",
-                },
-            };
+        const errorFetch = async () => {
+            const error = new Error("The operation was aborted");
+            error.name = "AbortError";
+            throw error;
         };
         await expect(async () => {
-            const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
+            const client = new Client({ apiKey: "not a valid key", fetch: errorFetch as any });
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,
@@ -290,17 +270,11 @@ describe("Client full integration tests", () => {
     });
 
     test("Embeddings - Unknown error", async () => {
-        const errorFetcher: FetchFunction = async (args: Fetcher.Args) => {
-            return {
-                ok: false,
-                error: {
-                    reason: "unknown",
-                    errorMessage: "Unknown error occured",
-                },
-            };
+        const errorFetch = async () => {
+            throw new Error("Unknown error occured");
         };
         await expect(async () => {
-            const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
+            const client = new Client({ apiKey: "not a valid key", fetch: errorFetch as any });
             await client.embed({
                 input: documents,
                 model: "voyage-3-large",
@@ -309,17 +283,11 @@ describe("Client full integration tests", () => {
     });
 
     test("Reranking - Unknown error", async () => {
-        const errorFetcher: FetchFunction = async (args: Fetcher.Args) => {
-            return {
-                ok: false,
-                error: {
-                    reason: "unknown",
-                    errorMessage: "Unknown error occured",
-                },
-            };
+        const errorFetch = async () => {
+            throw new Error("Unknown error occured");
         };
         await expect(async () => {
-            const client = new Client({ apiKey: "not a valid key", fetcher: errorFetcher });
+            const client = new Client({ apiKey: "not a valid key", fetch: errorFetch as any });
             await client.rerank({
                 query: "When is the Apple's conference call scheduled?",
                 documents: documents,

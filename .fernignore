@@ -7,3 +7,4 @@ LICENSE
 src/local/
 src/extended/
 scripts/
+.gitignore

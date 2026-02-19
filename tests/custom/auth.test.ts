@@ -1,6 +1,5 @@
 import { BasicAuth, BearerToken } from "../../src/core/auth";
 import { getHeader } from "../../src/core/fetcher";
-import { Base64 } from "js-base64";
 
 describe("BasicAuth tests", () => {
     test("toAuthorizationHeader - undefined", async () => {
@@ -16,7 +15,7 @@ describe("BasicAuth tests", () => {
 
     it("should handle special characters in username and password", () => {
         const basicAuth = { username: "user@example.com", password: "p@ssw0rd!" }
-        const expectedToken = Base64.encode("user@example.com:p@ssw0rd!")
+        const expectedToken = Buffer.from("user@example.com:p@ssw0rd!").toString("base64")
         expect(BasicAuth.toAuthorizationHeader(basicAuth)).toBe(`Basic ${expectedToken}`)
       })
   
