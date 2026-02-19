@@ -127,12 +127,16 @@ jobs:
         needs: [compile, unit-test, integration-test]
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/') && contains(github.ref, '0.0.0')
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
 
         steps:
             - name: Checkout repo
-              uses: ClementTsang/delete-tag-and-release@v0.3.1
-              with:
-                delete_release: true
-                tag_name: 0.0.0 # tag name to delete
+              uses: actions/checkout@v3
+
+            - name: Delete 0.0.0 tag and release
               env:
-                GITHUB_TOKEN: ${{ secrets.TAGGING_GITHUB_TOKEN }}
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                gh release delete 0.0.0 --yes --cleanup-tag || true
+                git push --delete origin refs/tags/0.0.0 || true
