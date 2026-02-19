@@ -80,7 +80,8 @@
         "msw": "2.11.2",
         "@types/node": "^18.19.70",
         "typescript": "~5.7.2",
-        "@biomejs/biome": "2.3.11"
+        "@biomejs/biome": "2.3.11",
+        "@vitest/coverage-v8": "^3.2.4"
     },
     "browser": {
         "fs": false,
