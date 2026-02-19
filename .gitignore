@@ -1,3 +1,20 @@
 node_modules
 .DS_Store
 /dist
+
+# Fern-generated build artifacts (compiled JS/DTS copied to root by prepack)
+/api/
+/auth/
+/core/
+/errors/
+/models/
+/serialization/
+/coverage/
+*.js
+*.d.ts
+!jest.config.js
+!scripts/**/*.js
+
+# IDE
+.idea/
+.vscode/

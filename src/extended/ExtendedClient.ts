@@ -4,6 +4,8 @@
 
 import { VoyageAIClient as GeneratedClient } from "../Client";
 import type * as VoyageAI from "../api";
+import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise";
+import { unknownRawResponse } from "../core/fetcher/RawResponse";
 import { localEmbed, isLocalModel } from "../local";
 
 export class VoyageAIClient extends GeneratedClient {
@@ -30,12 +32,14 @@ export class VoyageAIClient extends GeneratedClient {
      *         model: "voyage-3-large"
      *     })
      */
-    public async embed(
+    public embed(
         request: VoyageAI.EmbedRequest,
         requestOptions?: GeneratedClient.RequestOptions
-    ): Promise<VoyageAI.EmbedResponse> {
+    ): HttpResponsePromise<VoyageAI.EmbedResponse> {
         if (isLocalModel(request.model)) {
-            return localEmbed(request);
+            return HttpResponsePromise.fromPromise(
+                localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse }))
+            );
         }
         return super.embed(request, requestOptions);
     }
