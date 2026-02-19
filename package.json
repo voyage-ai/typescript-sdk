@@ -3,8 +3,8 @@
     "version": "0.0.0",
     "private": false,
     "repository": "https://github.com/voyage-ai/typescript-sdk",
-    "main": "./index.js",
-    "types": "./index.d.ts",
+    "main": "./extended/index.js",
+    "types": "./extended/index.d.ts",
     "scripts": {
         "format": "prettier . --write --ignore-unknown",
         "build": "tsc",
@@ -19,6 +19,18 @@
         "qs": "6.11.2",
         "readable-stream": "^4.5.2",
         "js-base64": "3.7.2"
+    },
+    "peerDependencies": {
+        "@huggingface/transformers": "^3.8.0",
+        "onnxruntime-node": ">=1.17.0"
+    },
+    "peerDependenciesMeta": {
+        "@huggingface/transformers": {
+            "optional": true
+        },
+        "onnxruntime-node": {
+            "optional": true
+        }
     },
     "devDependencies": {
         "@types/url-join": "4.0.1",
