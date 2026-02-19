@@ -15,16 +15,8 @@ jobs:
 
             - name: Compile
               run: |
-                yarn install
-                echo 'Adding resolutions to package.json...'
-                node -e "
-                  const fs = require('fs');
-                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
-                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-                "
-                yarn install --force
-                yarn build
+                npm install
+                npm run build
 
     unit-test:
         runs-on: ubuntu-latest
@@ -35,21 +27,12 @@ jobs:
 
             - name: Set up node
               uses: actions/setup-node@v3
-            
-            - name: Install dependencies and fix TypeScript compatibility
-              run: |
-                yarn install
-                echo 'Adding resolutions to package.json...'
-                node -e "
-                  const fs = require('fs');
-                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
-                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-                "
-                yarn install --force
+
+            - name: Install dependencies
+              run: npm install
 
             - name: Unit Test
-              run: yarn jest tests/unit
+              run: npx jest tests/unit
 
     integration-test:
         runs-on: ubuntu-latest
@@ -60,17 +43,17 @@ jobs:
 
             - name: Set up node
               uses: actions/setup-node@v3
-            
+
             - name: Install dependencies
-              run: yarn install
+              run: npm install
 
             - name: Integration Server Test (with retries)
-              env: 
+              env:
                 VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
               run: |
                 for i in {1..3}; do
                   echo "Integration test attempt $i/3..."
-                  if yarn jest tests/custom --testTimeout=300000; then
+                  if npx jest tests/custom --testTimeout=300000; then
                     echo "Integration tests passed on attempt $i"
                     break
                   elif [ $i -eq 3 ]; then
@@ -92,22 +75,13 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
-            - name: Install dependencies and fix TypeScript compatibility
-              run: |
-                yarn install
-                echo 'Adding resolutions to package.json...'
-                node -e "
-                  const fs = require('fs');
-                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
-                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-                "
-                yarn install --force
+            - name: Install dependencies
+              run: npm install
 
             - name: Integration Server Test
               env:
                 VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
-              run: yarn jest --coverage tests/unit tests/integration tests/custom --testTimeout=300000
+              run: npx jest --coverage tests/unit tests/integration tests/custom --testTimeout=300000
 
     publish:
         needs: [compile, unit-test, integration-test]
@@ -121,20 +95,11 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
-            - name: Install dependencies and fix TypeScript compatibility
-              run: |
-                yarn install
-                echo 'Adding resolutions to package.json...'
-                node -e "
-                  const fs = require('fs');
-                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-                  pkg.resolutions = { '@types/babel__traverse': '7.20.6' };
-                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-                "
-                yarn install --force
+            - name: Install dependencies
+              run: npm install
 
             - name: Build
-              run: yarn build
+              run: npm run build
 
             - name: Publish to npm
               run: |
