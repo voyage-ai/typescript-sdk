@@ -7,9 +7,9 @@
         "url": "git+https://github.com/voyage-ai/typescript-sdk.git"
     },
     "type": "commonjs",
-    "main": "./extended/index.js",
+    "main": "./dist/cjs/extended/index.js",
     "module": "./dist/esm/index.mjs",
-    "types": "./extended/index.d.ts",
+    "types": "./dist/cjs/extended/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/cjs/index.d.ts",
