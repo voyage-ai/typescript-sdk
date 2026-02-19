@@ -1,0 +1,29 @@
+{
+    "cliVersion": "3.79.2",
+    "generatorName": "fernapi/fern-typescript-sdk",
+    "generatorVersion": "3.48.2",
+    "generatorConfig": {
+        "namespaceExport": "VoyageAI",
+        "noSerdeLayer": false,
+        "skipResponseValidation": true,
+        "fetchSupport": "node-fetch",
+        "packageJson": {
+            "license": "MIT",
+            "main": "./extended/index.js",
+            "types": "./extended/index.d.ts"
+        },
+        "extraPeerDependencies": {
+            "@huggingface/transformers": "^3.8.0",
+            "onnxruntime-node": ">=1.17.0"
+        },
+        "extraPeerDependenciesMeta": {
+            "@huggingface/transformers": {
+                "optional": true
+            },
+            "onnxruntime-node": {
+                "optional": true
+            }
+        }
+    },
+    "sdkVersion": "0.0.0"
+}

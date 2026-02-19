@@ -1,10 +1,17 @@
-import { BaseSchema, MaybeValid, Schema, SchemaOptions, SchemaType, ValidationError } from "../../Schema";
-import { maybeSkipValidation } from "../../utils/maybeSkipValidation";
-import { getSchemaUtils } from "../schema-utils";
-import { inferParsedUnidiscriminatedUnionSchema, inferRawUnidiscriminatedUnionSchema } from "./types";
+import {
+    type BaseSchema,
+    type MaybeValid,
+    type Schema,
+    type SchemaOptions,
+    SchemaType,
+    type ValidationError,
+} from "../../Schema.js";
+import { maybeSkipValidation } from "../../utils/maybeSkipValidation.js";
+import { getSchemaUtils } from "../schema-utils/index.js";
+import type { inferParsedUnidiscriminatedUnionSchema, inferRawUnidiscriminatedUnionSchema } from "./types.js";
 
 export function undiscriminatedUnion<Schemas extends [Schema<any, any>, ...Schema<any, any>[]]>(
-    schemas: Schemas
+    schemas: Schemas,
 ): Schema<inferRawUnidiscriminatedUnionSchema<Schemas>, inferParsedUnidiscriminatedUnionSchema<Schemas>> {
     const baseSchema: BaseSchema<
         inferRawUnidiscriminatedUnionSchema<Schemas>,
@@ -14,14 +21,14 @@ export function undiscriminatedUnion<Schemas extends [Schema<any, any>, ...Schem
             return validateAndTransformUndiscriminatedUnion<inferParsedUnidiscriminatedUnionSchema<Schemas>>(
                 (schema, opts) => schema.parse(raw, opts),
                 schemas,
-                opts
+                opts,
             );
         },
         json: (parsed, opts) => {
             return validateAndTransformUndiscriminatedUnion<inferRawUnidiscriminatedUnionSchema<Schemas>>(
                 (schema, opts) => schema.json(parsed, opts),
                 schemas,
-                opts
+                opts,
             );
         },
         getType: () => SchemaType.UNDISCRIMINATED_UNION,
@@ -36,7 +43,7 @@ export function undiscriminatedUnion<Schemas extends [Schema<any, any>, ...Schem
 function validateAndTransformUndiscriminatedUnion<Transformed>(
     transform: (schema: Schema<any, any>, opts: SchemaOptions) => MaybeValid<Transformed>,
     schemas: Schema<any, any>[],
-    opts: SchemaOptions | undefined
+    opts: SchemaOptions | undefined,
 ): MaybeValid<Transformed> {
     const errors: ValidationError[] = [];
     for (const [index, schema] of schemas.entries()) {

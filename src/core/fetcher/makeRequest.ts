@@ -1,31 +1,29 @@
-import { anySignal, getTimeoutSignal } from "./signals";
+import { anySignal, getTimeoutSignal } from "./signals.js";
 
 export const makeRequest = async (
     fetchFn: (url: string, init: RequestInit) => Promise<Response>,
     url: string,
     method: string,
-    headers: Record<string, string>,
+    headers: Headers | Record<string, string>,
     requestBody: BodyInit | undefined,
     timeoutMs?: number,
     abortSignal?: AbortSignal,
     withCredentials?: boolean,
-    duplex?: "half"
+    duplex?: "half",
 ): Promise<Response> => {
     const signals: AbortSignal[] = [];
 
-    // Add timeout signal
-    let timeoutAbortId: NodeJS.Timeout | undefined = undefined;
+    let timeoutAbortId: ReturnType<typeof setTimeout> | undefined;
     if (timeoutMs != null) {
         const { signal, abortId } = getTimeoutSignal(timeoutMs);
         timeoutAbortId = abortId;
         signals.push(signal);
     }
 
-    // Add arbitrary signal
     if (abortSignal != null) {
         signals.push(abortSignal);
     }
-    let newSignals = anySignal(signals);
+    const newSignals = anySignal(signals);
     const response = await fetchFn(url, {
         method: method,
         headers,

@@ -1,14 +1,14 @@
-import { MaybeValid, Schema, SchemaType, ValidationError } from "../../Schema";
-import { entries } from "../../utils/entries";
-import { getErrorMessageForIncorrectType } from "../../utils/getErrorMessageForIncorrectType";
-import { isPlainObject } from "../../utils/isPlainObject";
-import { maybeSkipValidation } from "../../utils/maybeSkipValidation";
-import { getSchemaUtils } from "../schema-utils";
-import { BaseRecordSchema, RecordSchema } from "./types";
+import { type MaybeValid, type Schema, SchemaType, type ValidationError } from "../../Schema.js";
+import { entries } from "../../utils/entries.js";
+import { getErrorMessageForIncorrectType } from "../../utils/getErrorMessageForIncorrectType.js";
+import { isPlainObject } from "../../utils/isPlainObject.js";
+import { maybeSkipValidation } from "../../utils/maybeSkipValidation.js";
+import { getSchemaUtils } from "../schema-utils/index.js";
+import type { BaseRecordSchema, RecordSchema } from "./types.js";
 
 export function record<RawKey extends string | number, RawValue, ParsedValue, ParsedKey extends string | number>(
     keySchema: Schema<RawKey, ParsedKey>,
-    valueSchema: Schema<RawValue, ParsedValue>
+    valueSchema: Schema<RawValue, ParsedValue>,
 ): RecordSchema<RawKey, RawValue, ParsedKey, ParsedValue> {
     const baseSchema: BaseRecordSchema<RawKey, RawValue, ParsedKey, ParsedValue> = {
         parse: (raw, opts) => {
@@ -81,8 +81,7 @@ function validateAndTransformRecord<TransformedKey extends string | number, Tran
 
     return entries(value).reduce<MaybeValid<Record<TransformedKey, TransformedValue>>>(
         (accPromise, [stringKey, value]) => {
-            // skip nullish keys
-            if (value == null) {
+            if (value === undefined) {
                 return accPromise;
             }
 
@@ -91,7 +90,7 @@ function validateAndTransformRecord<TransformedKey extends string | number, Tran
             let key: string | number = stringKey;
             if (isKeyNumeric) {
                 const numberKey = stringKey.length > 0 ? Number(stringKey) : NaN;
-                if (!isNaN(numberKey)) {
+                if (!Number.isNaN(numberKey)) {
                     key = numberKey;
                 }
             }
@@ -125,6 +124,6 @@ function validateAndTransformRecord<TransformedKey extends string | number, Tran
                 errors,
             };
         },
-        { ok: true, value: {} as Record<TransformedKey, TransformedValue> }
+        { ok: true, value: {} as Record<TransformedKey, TransformedValue> },
     );
 }

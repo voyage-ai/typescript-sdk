@@ -1,7 +1,7 @@
-import { BaseSchema, MaybeValid, Schema, SchemaType, ValidationError } from "../../Schema";
-import { getErrorMessageForIncorrectType } from "../../utils/getErrorMessageForIncorrectType";
-import { maybeSkipValidation } from "../../utils/maybeSkipValidation";
-import { getSchemaUtils } from "../schema-utils";
+import { type BaseSchema, type MaybeValid, type Schema, SchemaType, type ValidationError } from "../../Schema.js";
+import { getErrorMessageForIncorrectType } from "../../utils/getErrorMessageForIncorrectType.js";
+import { maybeSkipValidation } from "../../utils/maybeSkipValidation.js";
+import { getSchemaUtils } from "../schema-utils/index.js";
 
 export function list<Raw, Parsed>(schema: Schema<Raw, Parsed>): Schema<Raw[], Parsed[]> {
     const baseSchema: BaseSchema<Raw[], Parsed[]> = {
@@ -10,14 +10,14 @@ export function list<Raw, Parsed>(schema: Schema<Raw, Parsed>): Schema<Raw[], Pa
                 schema.parse(item, {
                     ...opts,
                     breadcrumbsPrefix: [...(opts?.breadcrumbsPrefix ?? []), `[${index}]`],
-                })
+                }),
             ),
         json: (parsed, opts) =>
             validateAndTransformArray(parsed, (item, index) =>
                 schema.json(item, {
                     ...opts,
                     breadcrumbsPrefix: [...(opts?.breadcrumbsPrefix ?? []), `[${index}]`],
-                })
+                }),
             ),
         getType: () => SchemaType.LIST,
     };
@@ -30,7 +30,7 @@ export function list<Raw, Parsed>(schema: Schema<Raw, Parsed>): Schema<Raw[], Pa
 
 function validateAndTransformArray<Raw, Parsed>(
     value: unknown,
-    transformItem: (item: Raw, index: number) => MaybeValid<Parsed>
+    transformItem: (item: Raw, index: number) => MaybeValid<Parsed>,
 ): MaybeValid<Parsed[]> {
     if (!Array.isArray(value)) {
         return {
@@ -68,6 +68,6 @@ function validateAndTransformArray<Raw, Parsed>(
                 errors,
             };
         },
-        { ok: true, value: [] }
+        { ok: true, value: [] },
     );
 }

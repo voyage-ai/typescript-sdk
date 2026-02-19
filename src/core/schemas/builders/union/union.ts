@@ -1,18 +1,24 @@
-import { BaseSchema, MaybeValid, SchemaType } from "../../Schema";
-import { getErrorMessageForIncorrectType } from "../../utils/getErrorMessageForIncorrectType";
-import { isPlainObject } from "../../utils/isPlainObject";
-import { keys } from "../../utils/keys";
-import { maybeSkipValidation } from "../../utils/maybeSkipValidation";
-import { enum_ } from "../enum";
-import { ObjectSchema } from "../object";
-import { getObjectLikeUtils, ObjectLikeSchema } from "../object-like";
-import { getSchemaUtils } from "../schema-utils";
-import { Discriminant } from "./discriminant";
-import { inferParsedDiscriminant, inferParsedUnion, inferRawDiscriminant, inferRawUnion, UnionSubtypes } from "./types";
+import { type BaseSchema, type MaybeValid, SchemaType } from "../../Schema.js";
+import { getErrorMessageForIncorrectType } from "../../utils/getErrorMessageForIncorrectType.js";
+import { isPlainObject } from "../../utils/isPlainObject.js";
+import { keys } from "../../utils/keys.js";
+import { maybeSkipValidation } from "../../utils/maybeSkipValidation.js";
+import { enum_ } from "../enum/index.js";
+import type { ObjectSchema } from "../object/index.js";
+import { getObjectLikeUtils, type ObjectLikeSchema } from "../object-like/index.js";
+import { getSchemaUtils } from "../schema-utils/index.js";
+import type { Discriminant } from "./discriminant.js";
+import type {
+    inferParsedDiscriminant,
+    inferParsedUnion,
+    inferRawDiscriminant,
+    inferRawUnion,
+    UnionSubtypes,
+} from "./types.js";
 
 export function union<D extends string | Discriminant<any, any>, U extends UnionSubtypes<any>>(
     discriminant: D,
-    union: U
+    union: U,
 ): ObjectLikeSchema<inferRawUnion<D, U>, inferParsedUnion<D, U>> {
     const rawDiscriminant =
         typeof discriminant === "string" ? discriminant : (discriminant.rawDiscriminant as inferRawDiscriminant<D>);
@@ -71,7 +77,7 @@ export function union<D extends string | Discriminant<any, any>, U extends Union
 function transformAndValidateUnion<
     TransformedDiscriminant extends string,
     TransformedDiscriminantValue extends string,
-    TransformedAdditionalProperties
+    TransformedAdditionalProperties,
 >({
     value,
     discriminant,
@@ -90,7 +96,7 @@ function transformAndValidateUnion<
     allowUnrecognizedUnionMembers: boolean | undefined;
     transformAdditionalProperties: (
         additionalProperties: unknown,
-        additionalPropertiesSchema: ObjectSchema<any, any>
+        additionalPropertiesSchema: ObjectSchema<any, any>,
     ) => MaybeValid<TransformedAdditionalProperties>;
     breadcrumbsPrefix: string[] | undefined;
 }): MaybeValid<Record<TransformedDiscriminant, TransformedDiscriminantValue> & TransformedAdditionalProperties> {
@@ -154,7 +160,7 @@ function transformAndValidateUnion<
 
     const transformedAdditionalProperties = transformAdditionalProperties(
         additionalProperties,
-        additionalPropertiesSchema
+        additionalPropertiesSchema,
     );
     if (!transformedAdditionalProperties.ok) {
         return transformedAdditionalProperties;
