@@ -10,7 +10,21 @@
         "packageJson": {
             "license": "MIT",
             "main": "./dist/cjs/extended/index.js",
-            "types": "./dist/cjs/extended/index.d.ts"
+            "types": "./dist/cjs/extended/index.d.ts",
+            "exports": {
+                ".": {
+                    "types": "./dist/cjs/extended/index.d.ts",
+                    "import": {
+                        "types": "./dist/esm/extended/index.d.mts",
+                        "default": "./dist/esm/extended/index.mjs"
+                    },
+                    "require": {
+                        "types": "./dist/cjs/extended/index.d.ts",
+                        "default": "./dist/cjs/extended/index.js"
+                    },
+                    "default": "./dist/cjs/extended/index.js"
+                }
+            }
         },
         "extraDevDependencies": {
             "@vitest/coverage-v8": "^3.2.4"
