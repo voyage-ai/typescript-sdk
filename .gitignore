@@ -1,3 +1,31 @@
 node_modules
 .DS_Store
 /dist
+
+# Build artifacts from prepack (cp -rv dist/. .)
+/Client.js
+/Client.d.ts
+/index.js
+/index.d.ts
+/main.js
+/environments.js
+/environments.d.ts
+/api/
+/core/
+/errors/
+/models/
+/serialization/
+
+# IDE / editor
+.idea/
+.vscode/
+
+# Test / coverage
+.coverage
+/coverage/
+
+# Claude Code
+.claude/
+
+# Lock files (yarn.lock is primary)
+package-lock.json
