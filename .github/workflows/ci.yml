@@ -13,10 +13,13 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
+            - name: Install pnpm
+              run: npm install -g pnpm
+
             - name: Compile
               run: |
-                npm install
-                npm run build
+                pnpm install
+                pnpm build
 
     unit-test:
         runs-on: ubuntu-latest
@@ -28,11 +31,14 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
+            - name: Install pnpm
+              run: npm install -g pnpm
+
             - name: Install dependencies
-              run: npm install
+              run: pnpm install
 
             - name: Unit Test
-              run: npx jest tests/unit
+              run: pnpm vitest run --project unit
 
     integration-test:
         runs-on: ubuntu-latest
@@ -44,8 +50,11 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
+            - name: Install pnpm
+              run: npm install -g pnpm
+
             - name: Install dependencies
-              run: npm install
+              run: pnpm install
 
             - name: Integration Server Test (with retries)
               env:
@@ -53,7 +62,7 @@ jobs:
               run: |
                 for i in {1..3}; do
                   echo "Integration test attempt $i/3..."
-                  if npx jest tests/custom --testTimeout=300000; then
+                  if pnpm vitest run --project custom --testTimeout=300000; then
                     echo "Integration tests passed on attempt $i"
                     break
                   elif [ $i -eq 3 ]; then
@@ -75,13 +84,16 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
-            - name: Install dependencies
-              run: npm install
+            - name: Install pnpm
+              run: npm install -g pnpm
 
-            - name: Integration Server Test
+            - name: Install dependencies
+              run: pnpm install
+
+            - name: Coverage Test
               env:
                 VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
-              run: npx jest --coverage tests/unit tests/integration tests/custom --testTimeout=300000
+              run: pnpm vitest run --project unit --project custom --coverage --testTimeout=300000
 
     publish:
         needs: [compile, unit-test, integration-test]
@@ -95,11 +107,14 @@ jobs:
             - name: Set up node
               uses: actions/setup-node@v3
 
+            - name: Install pnpm
+              run: npm install -g pnpm
+
             - name: Install dependencies
-              run: npm install
+              run: pnpm install
 
             - name: Build
-              run: npm run build
+              run: pnpm build
 
             - name: Publish to npm
               run: |

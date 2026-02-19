@@ -9,8 +9,17 @@ export default defineConfig({
                     environment: "node",
                     root: "./tests",
                     include: ["**/*.test.{js,ts,jsx,tsx}"],
-                    exclude: ["wire/**"],
+                    exclude: ["wire/**", "custom/**"],
                     setupFiles: ["./setup.ts"],
+                },
+            },
+            {
+                test: {
+                    globals: true,
+                    name: "custom",
+                    environment: "node",
+                    root: "./tests/custom",
+                    include: ["**/*.test.{js,ts,jsx,tsx}"],
                 },
             },
             {
