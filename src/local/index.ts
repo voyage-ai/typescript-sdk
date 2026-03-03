@@ -1,4 +1,6 @@
-export { localEmbed, countTokens } from "./local-embedder";
+export { localEmbed } from "./local-embedder";
+export { getTokenizerForModel, tokenizeTexts } from "./tokenizer";
+export type { TokenizeResult } from "./tokenizer";
 export {
     isLocalModel,
     getModelConfig,

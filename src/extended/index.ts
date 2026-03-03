@@ -10,3 +10,4 @@ export { VoyageAIClient as GeneratedVoyageAIClient } from "../Client";
 
 // Export local utilities for advanced use cases
 export { localEmbed, isLocalModel } from "../local";
+export type { TokenizeResult } from "../local/tokenizer";
