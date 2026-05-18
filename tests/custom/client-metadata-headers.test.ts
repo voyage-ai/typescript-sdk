@@ -125,4 +125,78 @@ describe("client metadata headers on the wire", () => {
         // user header preserved
         expect(capturedHeaders!.get("x-custom-header")).toBe("custom-value");
     });
+
+    it("chains multiple wrappers with pipe delimiter", async () => {
+        const embedResponse = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+            model: "voyage-3-large",
+            usage: { total_tokens: 5 },
+        };
+        const { fetch, getCapturedHeaders } = createCapturingFetch(embedResponse);
+
+        const client = new VoyageAIClient({
+            apiKey: "test-key",
+            environment: "https://mock.test",
+            maxRetries: 0,
+            fetch,
+        });
+
+        client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+        client.appendClientMetadata({ name: "llamaindex", version: "0.10.5" });
+        await client.embed({ input: "test", model: "voyage-3-large" });
+
+        const capturedHeaders = getCapturedHeaders();
+        expect(capturedHeaders!.get("x-voyageai-wrapper")).toBe("mem0/1.2.3|llamaindex/0.10.5");
+    });
+
+    it("is idempotent — same (name, version) is not duplicated", async () => {
+        const embedResponse = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+            model: "voyage-3-large",
+            usage: { total_tokens: 5 },
+        };
+        const { fetch, getCapturedHeaders } = createCapturingFetch(embedResponse);
+
+        const client = new VoyageAIClient({
+            apiKey: "test-key",
+            environment: "https://mock.test",
+            maxRetries: 0,
+            fetch,
+        });
+
+        client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+        client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+        client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+        await client.embed({ input: "test", model: "voyage-3-large" });
+
+        const capturedHeaders = getCapturedHeaders();
+        expect(capturedHeaders!.get("x-voyageai-wrapper")).toBe("mem0/1.2.3");
+    });
+
+    it("user-provided User-Agent overrides metadata User-Agent", async () => {
+        const embedResponse = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+            model: "voyage-3-large",
+            usage: { total_tokens: 5 },
+        };
+        const { fetch, getCapturedHeaders } = createCapturingFetch(embedResponse);
+
+        const client = new VoyageAIClient({
+            apiKey: "test-key",
+            environment: "https://mock.test",
+            maxRetries: 0,
+            headers: { "User-Agent": "custom-agent/1.0" },
+            fetch,
+        });
+
+        await client.embed({ input: "test", model: "voyage-3-large" });
+
+        const capturedHeaders = getCapturedHeaders();
+        expect(capturedHeaders!.get("user-agent")).toBe("custom-agent/1.0");
+        // Other metadata headers should still be present
+        expect(capturedHeaders!.get("x-voyageai-lang")).toBe("typescript");
+    });
 });
