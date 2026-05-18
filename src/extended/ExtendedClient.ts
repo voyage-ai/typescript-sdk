@@ -19,7 +19,7 @@ export class VoyageAIClient extends GeneratedClient {
         const metadataHeaders = buildMetadataHeaders();
         super({
             ...options,
-            headers: mergeHeaders(metadataHeaders, options.headers),
+            headers: mergeHeaders(metadataHeaders, options.headers) as GeneratedClient.Options["headers"],
         });
     }
 
