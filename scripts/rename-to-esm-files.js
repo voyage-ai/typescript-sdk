@@ -57,7 +57,7 @@ async function resolveBarePath(file, importPath) {
     } catch {}
 
     // Check if a corresponding .js or .mjs file exists
-    for (const ext of [".mjs", ".js"]) {
+    for (const ext of [".mjs", ".js", ".mts", ".ts"]) {
         try {
             await fs.stat(resolved + ext);
             return `${importPath}.mjs`;
