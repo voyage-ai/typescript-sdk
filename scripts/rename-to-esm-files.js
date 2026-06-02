@@ -44,24 +44,6 @@ async function updateFiles(files) {
     console.log(`Updated imports in ${updatedFiles.length} files.`);
 }
 
-function resolveBarePath(importPath, fromFile) {
-    const dir = path.dirname(fromFile);
-    const resolved = path.resolve(dir, importPath);
-    try {
-        const stat = require("fs").statSync(resolved);
-        if (stat.isDirectory()) {
-            return importPath + "/index.mjs";
-        }
-    } catch {}
-    for (const ext of [".js", ".ts", ".mjs", ".mts"]) {
-        try {
-            require("fs").statSync(resolved + ext);
-            return importPath + ".mjs";
-        } catch {}
-    }
-    return null;
-}
-
 async function updateFileContents(file) {
     const content = await fs.readFile(file, "utf8");
 
@@ -79,15 +61,6 @@ async function updateFileContents(file) {
         );
         newContent = newContent.replace(dynamicRegex, `$1("$2${newExt}")`);
     }
-
-    // Resolve bare relative imports (no file extension) to explicit .mjs paths
-    const bareStaticRegex = /(import|export)(.+from\s+['"])(\.\.?\/[^'"]+)(?<!\.\w+)(['"])/g;
-    newContent = newContent.replace(bareStaticRegex, (match, keyword, middle, importPath, quote) => {
-        if (/\.\w+$/.test(importPath)) return match;
-        const resolved = resolveBarePath(importPath, file);
-        if (resolved) return `${keyword}${middle}${resolved}${quote}`;
-        return match;
-    });
 
     if (content !== newContent) {
         await fs.writeFile(file, newContent, "utf8");
