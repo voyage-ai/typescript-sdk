@@ -2,13 +2,13 @@
  * Extended VoyageAI client with local model support
  */
 
-import { VoyageAIClient as GeneratedClient } from "../Client";
-import type * as VoyageAI from "../api";
-import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise";
-import { unknownRawResponse } from "../core/fetcher/RawResponse";
-import { localEmbed, isLocalModel } from "../local";
-import { tokenizeTexts } from "../local/tokenizer";
-import type { TokenizeResult } from "../local/tokenizer";
+import { VoyageAIClient as GeneratedClient } from "../Client.js";
+import type * as VoyageAI from "../api/index.js";
+import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
+import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
+import { localEmbed, isLocalModel } from "../local/index.js";
+import { tokenizeTexts } from "../local/tokenizer.js";
+import type { TokenizeResult } from "../local/tokenizer.js";
 
 export class VoyageAIClient extends GeneratedClient {
     /**
