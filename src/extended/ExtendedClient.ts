@@ -2,13 +2,13 @@
  * Extended VoyageAI client with local model support
  */
 
-import { VoyageAIClient as GeneratedClient } from "../Client.js";
 import type * as VoyageAI from "../api/index.js";
+import { VoyageAIClient as GeneratedClient } from "../Client.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
-import { localEmbed, isLocalModel } from "../local/index.js";
-import { tokenizeTexts } from "../local/tokenizer.js";
+import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
+import { tokenizeTexts } from "../local/tokenizer.js";
 
 export class VoyageAIClient extends GeneratedClient {
     /**
@@ -36,14 +36,31 @@ export class VoyageAIClient extends GeneratedClient {
      */
     public embed(
         request: VoyageAI.EmbedRequest,
-        requestOptions?: GeneratedClient.RequestOptions
+        requestOptions?: GeneratedClient.RequestOptions,
     ): HttpResponsePromise<VoyageAI.EmbedResponse> {
         if (isLocalModel(request.model)) {
             return HttpResponsePromise.fromPromise(
-                localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse }))
+                localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse })),
             );
         }
         return super.embed(request, requestOptions);
+    }
+
+    /**
+     * Contextualized embeddings with auto-chunking support.
+     *
+     * Validates and normalizes inputs before forwarding to the API.
+     * Flat `string[]` inputs are normalized to `string[][]` (one string per document).
+     *
+     * @param {VoyageAI.ContextualizedEmbedRequest} request
+     * @param {GeneratedClient.RequestOptions} requestOptions - Request-specific configuration.
+     */
+    public contextualizedEmbed(
+        request: VoyageAI.ContextualizedEmbedRequest,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): HttpResponsePromise<VoyageAI.ContextualizedEmbedResponse> {
+        const normalizedRequest = validateAndNormalizeContextualizedInputs(request);
+        return super.contextualizedEmbed(normalizedRequest, requestOptions);
     }
 
     /**
@@ -62,4 +79,67 @@ export class VoyageAIClient extends GeneratedClient {
     public async tokenize(texts: string[], model: string): Promise<TokenizeResult[]> {
         return tokenizeTexts(model, texts);
     }
+}
+
+function isFlatStringArray(inputs: string[][] | string[]): inputs is string[] {
+    return inputs.length > 0 && inputs.every((item) => typeof item === "string");
+}
+
+export function validateAndNormalizeContextualizedInputs(
+    request: VoyageAI.ContextualizedEmbedRequest,
+): VoyageAI.ContextualizedEmbedRequest {
+    const { inputs, inputType, enableAutoChunking, chunkSize, chunkOverlap } = request;
+
+    const hasChunkSize = chunkSize !== undefined && chunkSize !== null;
+    const hasChunkOverlap = chunkOverlap !== undefined && chunkOverlap !== null;
+
+    if (!enableAutoChunking && (hasChunkSize || hasChunkOverlap)) {
+        throw new Error("chunkSize and chunkOverlap require enableAutoChunking: true");
+    }
+
+    if (hasChunkSize && hasChunkOverlap && chunkOverlap >= chunkSize) {
+        throw new Error(`chunkOverlap (${chunkOverlap}) must be less than chunkSize (${chunkSize})`);
+    }
+
+    if (hasChunkSize && chunkSize < 1) {
+        throw new Error("chunkSize must be greater than or equal to 1");
+    }
+
+    if (hasChunkOverlap && chunkOverlap < 0) {
+        throw new Error("chunkOverlap must be greater than or equal to 0");
+    }
+
+    if (hasChunkOverlap && !hasChunkSize) {
+        throw new Error("chunkOverlap requires chunkSize");
+    }
+
+    if (!inputs || inputs.length === 0) {
+        throw new Error("inputs must not be empty");
+    }
+
+    let normalizedInputs: string[][];
+
+    if (isFlatStringArray(inputs)) {
+        if (inputType !== "query" && !enableAutoChunking) {
+            throw new Error("Flat string[] inputs require enableAutoChunking: true or inputType: 'query'");
+        }
+        normalizedInputs = inputs.map((s) => [s]);
+    } else {
+        normalizedInputs = inputs;
+    }
+
+    if (enableAutoChunking) {
+        if (inputType !== "document") {
+            throw new Error("enableAutoChunking: true requires inputType: 'document'");
+        }
+        for (let i = 0; i < normalizedInputs.length; i++) {
+            if (normalizedInputs[i].length !== 1) {
+                throw new Error(
+                    `inputs[${i}] has ${normalizedInputs[i].length} chunks; auto-chunking expects one string per document`,
+                );
+            }
+        }
+    }
+
+    return { ...request, inputs: normalizedInputs };
 }

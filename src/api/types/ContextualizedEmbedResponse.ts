@@ -10,4 +10,6 @@ export interface ContextualizedEmbedResponse {
     /** Name of the model used. */
     model?: string;
     usage?: VoyageAI.ContextualizedEmbedResponseUsage;
+    /** The version of the chunker used for server-side auto-chunking. Present when `enableAutoChunking` is true. */
+    chunkerVersion?: string;
 }

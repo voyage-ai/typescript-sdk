@@ -10,8 +10,8 @@ import type * as VoyageAI from "../../index.js";
  *     }
  */
 export interface ContextualizedEmbedRequest {
-    /** A list of documents, where each document is represented as a list of text chunks (strings). <ul> <li> The maximum number of inputs (documents) is 1,000. </li> <li> The total number of chunks across all documents cannot exceed 16,000. </li> <li> The total number of tokens across all inputs cannot exceed 120,000. </li> </ul> */
-    inputs: string[][];
+    /** A list of documents. Each document can be a list of text chunks (`string[][]`) or, when using auto-chunking or `inputType: "query"`, a flat list of strings (`string[]`). Flat inputs are normalized to `string[][]` by wrapping each string as `[[s] for s in inputs]`. */
+    inputs: string[][] | string[];
     /** Name of the model. Currently, the recommended model is `voyage-context-3`, which has a context  length of 32,000 tokens and supports output dimensions of 256, 512, 1024, and 2048. */
     model: string;
     /** Type of the input text. Defaults to `null`. Other options: `query`, `document`. <ul> <li> When `input_type` is `null`, the embedding model directly converts your input data into  numerical vectors. </li> <li> For retrieval/search purposes, we recommend specifying whether your inputs are intended  as queries or documents by setting `input_type` to `query` or `document`, respectively. </li> <li> When specified, Voyage prepends a specific prompt to your input before vectorizing it,  helping the model create more effective vectors tailored for retrieval/search tasks. </li> </ul> */
@@ -20,4 +20,10 @@ export interface ContextualizedEmbedRequest {
     outputDimension?: number;
     /** The data type for the embeddings to be returned. Defaults to `float`. Other options: `int8`, `uint8`, `binary`, `ubinary`. */
     outputDtype?: VoyageAI.ContextualizedEmbedRequestOutputDtype;
+    /** Enable server-side auto-chunking. Requires `inputType: "document"` and each input must be a single string per document. */
+    enableAutoChunking?: boolean;
+    /** Target chunk size in characters for server-side auto-chunking. Requires `enableAutoChunking: true`. Must be >= 1. */
+    chunkSize?: number;
+    /** Overlap in characters between consecutive chunks. Requires `enableAutoChunking: true` and `chunkSize`. Must be >= 0 and less than `chunkSize`. */
+    chunkOverlap?: number;
 }

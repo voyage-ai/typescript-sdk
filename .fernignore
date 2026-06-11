@@ -7,3 +7,10 @@ LICENSE
 src/local/
 src/extended/
 .gitignore
+# Auto-chunking fields added to Fern-generated types
+src/api/client/requests/ContextualizedEmbedRequest.ts
+src/api/types/ContextualizedEmbedResponse.ts
+src/api/types/ContextualizedEmbedResponseDataItemDataItem.ts
+src/serialization/client/requests/ContextualizedEmbedRequest.ts
+src/serialization/types/ContextualizedEmbedResponse.ts
+src/serialization/types/ContextualizedEmbedResponseDataItemDataItem.ts

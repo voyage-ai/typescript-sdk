@@ -7,4 +7,6 @@ export interface ContextualizedEmbedResponseDataItemDataItem {
     embedding?: number[];
     /** The index of this chunk within the document. */
     index?: number;
+    /** The text content of this chunk. Present when server-side auto-chunking is enabled. */
+    text?: string;
 }
