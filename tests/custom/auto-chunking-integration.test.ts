@@ -1,4 +1,4 @@
-import { VoyageAIClient } from "../../src/extended/ExtendedClient";
+import { defaultChunkFn, VoyageAIClient } from "../../src/extended/ExtendedClient";
 
 const client = new VoyageAIClient({ apiKey: process.env.VOYAGE_API_KEY || "" });
 
@@ -105,5 +105,41 @@ describe("auto-chunking integration", () => {
         expect(result.data![0].data!.length).toBe(2);
         // Standard response should not have auto-chunking fields
         expect(result.chunkerVersion).toBeUndefined();
+    });
+
+    test("chunkFn splits documents client-side before sending to API", async () => {
+        const splitOnSentence = (text: string) => text.split(/(?<=\.)\s+/);
+        const result = await client.contextualizedEmbed({
+            inputs: [["First sentence. Second sentence. Third sentence."]],
+            model: "voyage-context-3",
+            chunkFn: splitOnSentence,
+        });
+        expect(result.data).toBeDefined();
+        expect(result.data!.length).toBe(1);
+        expect(result.data![0].data!.length).toBe(3);
+    });
+
+    test("defaultChunkFn splits long document into chunks", async () => {
+        const longDoc = "This is a test paragraph. ".repeat(200);
+        const result = await client.contextualizedEmbed({
+            inputs: [[longDoc]],
+            model: "voyage-context-3",
+            chunkFn: defaultChunkFn(512),
+        });
+        expect(result.data).toBeDefined();
+        expect(result.data!.length).toBe(1);
+        expect(result.data![0].data!.length).toBeGreaterThan(1);
+    });
+
+    test("chunkFn with multiple documents", async () => {
+        const splitOnSpace = (text: string) => text.split(/(?<= )/);
+        const result = await client.contextualizedEmbed({
+            inputs: [["hello world"], ["foo bar baz"]],
+            model: "voyage-context-3",
+            chunkFn: splitOnSpace,
+        });
+        expect(result.data!.length).toBe(2);
+        expect(result.data![0].data!.length).toBe(2);
+        expect(result.data![1].data!.length).toBe(3);
     });
 });
