@@ -13,6 +13,7 @@ export const ContextualizedEmbedResponse: core.serialization.ObjectSchema<
     object: core.serialization.string().optional(),
     data: core.serialization.list(ContextualizedEmbedResponseDataItem).optional(),
     model: core.serialization.string().optional(),
+    chunkerVersion: core.serialization.property("chunker_version", core.serialization.string().optional()),
     usage: ContextualizedEmbedResponseUsage.optional(),
 });
 
@@ -21,6 +22,7 @@ export declare namespace ContextualizedEmbedResponse {
         object?: string | null;
         data?: ContextualizedEmbedResponseDataItem.Raw[] | null;
         model?: string | null;
+        chunker_version?: string | null;
         usage?: ContextualizedEmbedResponseUsage.Raw | null;
     }
 }

@@ -130,6 +130,7 @@ describe("VoyageAIClient", () => {
             object: "object",
             data: [{ object: "object", data: [{}], index: 1 }],
             model: "model",
+            chunker_version: "chunker_version",
             usage: { total_tokens: 1 },
         };
         server
@@ -155,6 +156,7 @@ describe("VoyageAIClient", () => {
                 },
             ],
             model: "model",
+            chunkerVersion: "chunker_version",
             usage: {
                 totalTokens: 1,
             },
