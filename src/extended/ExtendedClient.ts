@@ -1,5 +1,5 @@
 /**
- * Extended VoyageAI client with local model support
+ * Extended VoyageAI client with local model support and client-side chunking
  */
 
 import type * as VoyageAI from "../api/index.js";
@@ -9,6 +9,12 @@ import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
 import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
 import { tokenizeTexts } from "../local/tokenizer.js";
+
+export type ChunkFn = (text: string) => string[];
+
+export interface ContextualizedEmbedOptions extends VoyageAI.ContextualizedEmbedRequest {
+    chunkFn?: ChunkFn;
+}
 
 export class VoyageAIClient extends GeneratedClient {
     /**
@@ -47,20 +53,25 @@ export class VoyageAIClient extends GeneratedClient {
     }
 
     /**
-     * Contextualized embeddings with auto-chunking support.
+     * Contextualized embeddings with client-side chunking and server-side auto-chunking support.
      *
-     * Validates and normalizes inputs before forwarding to the API.
-     * Flat `string[]` inputs are normalized to `string[][]` (one string per document).
-     *
-     * @param {VoyageAI.ContextualizedEmbedRequest} request
-     * @param {GeneratedClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param request - Embed request with optional `chunkFn` for client-side chunking.
+     *   When `chunkFn` is provided, each document string is split into chunks locally
+     *   before being sent to the API. Cannot be combined with `enableAutoChunking`.
+     * @param requestOptions - Request-specific configuration.
      */
     public contextualizedEmbed(
-        request: VoyageAI.ContextualizedEmbedRequest,
+        request: ContextualizedEmbedOptions,
         requestOptions?: GeneratedClient.RequestOptions,
     ): HttpResponsePromise<VoyageAI.ContextualizedEmbedResponse> {
-        const normalizedRequest = validateAndNormalizeContextualizedInputs(request);
-        return super.contextualizedEmbed(normalizedRequest, requestOptions);
+        const { chunkFn, ...apiRequest } = request;
+        const normalizedRequest = validateAndNormalizeContextualizedInputs(apiRequest, chunkFn);
+
+        const requestInputs = chunkFn
+            ? applyChunking(normalizedRequest.inputs as string[][], chunkFn)
+            : normalizedRequest.inputs;
+
+        return super.contextualizedEmbed({ ...normalizedRequest, inputs: requestInputs }, requestOptions);
     }
 
     /**
@@ -87,8 +98,13 @@ function isFlatStringArray(inputs: string[][] | string[]): inputs is string[] {
 
 export function validateAndNormalizeContextualizedInputs(
     request: VoyageAI.ContextualizedEmbedRequest,
+    chunkFn?: ChunkFn,
 ): VoyageAI.ContextualizedEmbedRequest {
     const { inputs, inputType, enableAutoChunking, chunkSize, chunkOverlap } = request;
+
+    if (chunkFn !== undefined && enableAutoChunking) {
+        throw new Error("chunkFn cannot be combined with enableAutoChunking: true");
+    }
 
     const hasChunkSize = chunkSize !== undefined && chunkSize !== null;
     const hasChunkOverlap = chunkOverlap !== undefined && chunkOverlap !== null;
@@ -142,4 +158,79 @@ export function validateAndNormalizeContextualizedInputs(
     }
 
     return { ...request, inputs: normalizedInputs };
+}
+
+export function applyChunking(inputs: string[][], chunkFn: ChunkFn): string[][] {
+    return inputs.map((doc) => doc.flatMap((text) => chunkFn(text)));
+}
+
+const DEFAULT_CHUNK_SIZE = 2048;
+const SEPARATORS = [
+    "\n\n",
+    "\n",
+    "．", // Fullwidth full stop
+    "。", // Ideographic full stop
+    "，", // Fullwidth comma
+    "、", // Ideographic comma
+    ".",
+    ",",
+    " ",
+    "​", // Zero-width space
+    "",
+];
+
+function recursiveSplit(text: string, separators: string[], chunkSize: number): string[] {
+    if (text.length <= chunkSize) {
+        return [text];
+    }
+
+    const sep = separators[0];
+    const remainingSeparators = separators.slice(1);
+
+    if (sep === undefined || sep === "") {
+        const chunks: string[] = [];
+        for (let i = 0; i < text.length; i += chunkSize) {
+            chunks.push(text.slice(i, i + chunkSize));
+        }
+        return chunks;
+    }
+
+    const parts = text.split(sep);
+    const chunks: string[] = [];
+    let current = "";
+
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const piece = i < parts.length - 1 ? part + sep : part;
+
+        if (current.length + piece.length <= chunkSize) {
+            current += piece;
+        } else {
+            if (current.length > 0) {
+                chunks.push(current);
+            }
+            if (piece.length <= chunkSize) {
+                current = piece;
+            } else {
+                const subChunks = recursiveSplit(piece, remainingSeparators, chunkSize);
+                chunks.push(...subChunks.slice(0, -1));
+                current = subChunks[subChunks.length - 1];
+            }
+        }
+    }
+
+    if (current.length > 0) {
+        chunks.push(current);
+    }
+
+    return chunks;
+}
+
+export function defaultChunkFn(chunkSize: number = DEFAULT_CHUNK_SIZE): ChunkFn {
+    return (text: string): string[] => {
+        if (text.length === 0) {
+            return [text];
+        }
+        return recursiveSplit(text, SEPARATORS, chunkSize);
+    };
 }
