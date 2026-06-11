@@ -160,4 +160,95 @@ describe("VoyageAIClient", () => {
             },
         });
     });
+
+    test("contextualized-embed with auto-chunking fields serializes to snake_case", async () => {
+        const server = mockServerPool.createServer();
+        const client = new VoyageAIClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = {
+            inputs: [["doc text"]],
+            model: "voyage-context-3",
+            input_type: "document",
+            enable_auto_chunking: true,
+            chunk_size: 512,
+            chunk_overlap: 64,
+        };
+        const rawResponseBody = {
+            object: "list",
+            data: [
+                {
+                    object: "list",
+                    data: [
+                        { object: "embedding", embedding: [0.1, 0.2], index: 0, text: "doc text part 1" },
+                        { object: "embedding", embedding: [0.3, 0.4], index: 1, text: "doc text part 2" },
+                    ],
+                    index: 0,
+                },
+            ],
+            model: "voyage-context-3",
+            usage: { total_tokens: 10 },
+            chunker_version: "v1.0",
+        };
+        server
+            .mockEndpoint()
+            .post("/contextualizedembeddings")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(200)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        const response = await client.contextualizedEmbed({
+            inputs: [["doc text"]],
+            model: "voyage-context-3",
+            inputType: "document",
+            enableAutoChunking: true,
+            chunkSize: 512,
+            chunkOverlap: 64,
+        });
+        expect(response).toEqual({
+            object: "list",
+            data: [
+                {
+                    object: "list",
+                    data: [
+                        { object: "embedding", embedding: [0.1, 0.2], index: 0, text: "doc text part 1" },
+                        { object: "embedding", embedding: [0.3, 0.4], index: 1, text: "doc text part 2" },
+                    ],
+                    index: 0,
+                },
+            ],
+            model: "voyage-context-3",
+            usage: {
+                totalTokens: 10,
+            },
+            chunkerVersion: "v1.0",
+        });
+    });
+
+    test("contextualized-embed response without auto-chunking fields omits them", async () => {
+        const server = mockServerPool.createServer();
+        const client = new VoyageAIClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { inputs: [["chunk"]], model: "model" };
+        const rawResponseBody = {
+            object: "list",
+            data: [{ object: "list", data: [{ object: "embedding", embedding: [1.0], index: 0 }], index: 0 }],
+            model: "model",
+            usage: { total_tokens: 5 },
+        };
+        server
+            .mockEndpoint()
+            .post("/contextualizedembeddings")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(200)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        const response = await client.contextualizedEmbed({
+            inputs: [["chunk"]],
+            model: "model",
+        });
+        expect(response.chunkerVersion).toBeUndefined();
+        expect(response.data![0].data![0].text).toBeUndefined();
+    });
 });

@@ -10,19 +10,28 @@ export const ContextualizedEmbedRequest: core.serialization.Schema<
     serializers.ContextualizedEmbedRequest.Raw,
     VoyageAI.ContextualizedEmbedRequest
 > = core.serialization.object({
-    inputs: core.serialization.list(core.serialization.list(core.serialization.string())),
+    inputs: core.serialization.undiscriminatedUnion([
+        core.serialization.list(core.serialization.list(core.serialization.string())),
+        core.serialization.list(core.serialization.string()),
+    ]),
     model: core.serialization.string(),
     inputType: core.serialization.property("input_type", ContextualizedEmbedRequestInputType.optional()),
     outputDimension: core.serialization.property("output_dimension", core.serialization.number().optional()),
     outputDtype: core.serialization.property("output_dtype", ContextualizedEmbedRequestOutputDtype.optional()),
+    enableAutoChunking: core.serialization.property("enable_auto_chunking", core.serialization.boolean().optional()),
+    chunkSize: core.serialization.property("chunk_size", core.serialization.number().optional()),
+    chunkOverlap: core.serialization.property("chunk_overlap", core.serialization.number().optional()),
 });
 
 export declare namespace ContextualizedEmbedRequest {
     export interface Raw {
-        inputs: string[][];
+        inputs: string[][] | string[];
         model: string;
         input_type?: ContextualizedEmbedRequestInputType.Raw | null;
         output_dimension?: number | null;
         output_dtype?: ContextualizedEmbedRequestOutputDtype.Raw | null;
+        enable_auto_chunking?: boolean | null;
+        chunk_size?: number | null;
+        chunk_overlap?: number | null;
     }
 }
