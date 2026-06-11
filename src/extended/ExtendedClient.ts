@@ -1,14 +1,20 @@
 /**
- * Extended VoyageAI client with local model support
+ * Extended VoyageAI client with local model support and client-side chunking
  */
 
-import { VoyageAIClient as GeneratedClient } from "../Client.js";
 import type * as VoyageAI from "../api/index.js";
+import { VoyageAIClient as GeneratedClient } from "../Client.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
-import { localEmbed, isLocalModel } from "../local/index.js";
-import { tokenizeTexts } from "../local/tokenizer.js";
+import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
+import { tokenizeTexts } from "../local/tokenizer.js";
+
+export type ChunkFn = (text: string) => string[];
+
+export interface ContextualizedEmbedOptions extends VoyageAI.ContextualizedEmbedRequest {
+    chunkFn?: ChunkFn;
+}
 
 export class VoyageAIClient extends GeneratedClient {
     /**
@@ -36,14 +42,36 @@ export class VoyageAIClient extends GeneratedClient {
      */
     public embed(
         request: VoyageAI.EmbedRequest,
-        requestOptions?: GeneratedClient.RequestOptions
+        requestOptions?: GeneratedClient.RequestOptions,
     ): HttpResponsePromise<VoyageAI.EmbedResponse> {
         if (isLocalModel(request.model)) {
             return HttpResponsePromise.fromPromise(
-                localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse }))
+                localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse })),
             );
         }
         return super.embed(request, requestOptions);
+    }
+
+    /**
+     * Contextualized embeddings with client-side chunking and server-side auto-chunking support.
+     *
+     * @param request - Embed request with optional `chunkFn` for client-side chunking.
+     *   When `chunkFn` is provided, each document string is split into chunks locally
+     *   before being sent to the API. Cannot be combined with `enableAutoChunking`.
+     * @param requestOptions - Request-specific configuration.
+     */
+    public contextualizedEmbed(
+        request: ContextualizedEmbedOptions,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): HttpResponsePromise<VoyageAI.ContextualizedEmbedResponse> {
+        const { chunkFn, ...apiRequest } = request;
+        const normalizedRequest = validateAndNormalizeContextualizedInputs(apiRequest, chunkFn);
+
+        const requestInputs = chunkFn
+            ? applyChunking(normalizedRequest.inputs as string[][], chunkFn)
+            : normalizedRequest.inputs;
+
+        return super.contextualizedEmbed({ ...normalizedRequest, inputs: requestInputs }, requestOptions);
     }
 
     /**
@@ -62,4 +90,147 @@ export class VoyageAIClient extends GeneratedClient {
     public async tokenize(texts: string[], model: string): Promise<TokenizeResult[]> {
         return tokenizeTexts(model, texts);
     }
+}
+
+function isFlatStringArray(inputs: string[][] | string[]): inputs is string[] {
+    return inputs.length > 0 && inputs.every((item) => typeof item === "string");
+}
+
+export function validateAndNormalizeContextualizedInputs(
+    request: VoyageAI.ContextualizedEmbedRequest,
+    chunkFn?: ChunkFn,
+): VoyageAI.ContextualizedEmbedRequest {
+    const { inputs, inputType, enableAutoChunking, chunkSize, chunkOverlap } = request;
+
+    if (chunkFn !== undefined && enableAutoChunking) {
+        throw new Error("chunkFn cannot be combined with enableAutoChunking: true");
+    }
+
+    const hasChunkSize = chunkSize !== undefined && chunkSize !== null;
+    const hasChunkOverlap = chunkOverlap !== undefined && chunkOverlap !== null;
+
+    if (!enableAutoChunking && (hasChunkSize || hasChunkOverlap)) {
+        throw new Error("chunkSize and chunkOverlap require enableAutoChunking: true");
+    }
+
+    if (hasChunkSize && hasChunkOverlap && chunkOverlap >= chunkSize) {
+        throw new Error(`chunkOverlap (${chunkOverlap}) must be less than chunkSize (${chunkSize})`);
+    }
+
+    if (hasChunkSize && chunkSize < 1) {
+        throw new Error("chunkSize must be greater than or equal to 1");
+    }
+
+    if (hasChunkOverlap && chunkOverlap < 0) {
+        throw new Error("chunkOverlap must be greater than or equal to 0");
+    }
+
+    if (hasChunkOverlap && !hasChunkSize) {
+        throw new Error("chunkOverlap requires chunkSize");
+    }
+
+    if (!inputs || inputs.length === 0) {
+        throw new Error("inputs must not be empty");
+    }
+
+    let normalizedInputs: string[][];
+
+    if (isFlatStringArray(inputs)) {
+        if (inputType !== "query" && !enableAutoChunking) {
+            throw new Error("Flat string[] inputs require enableAutoChunking: true or inputType: 'query'");
+        }
+        normalizedInputs = inputs.map((s) => [s]);
+    } else {
+        normalizedInputs = inputs;
+    }
+
+    if (enableAutoChunking) {
+        if (inputType !== "document") {
+            throw new Error("enableAutoChunking: true requires inputType: 'document'");
+        }
+        for (let i = 0; i < normalizedInputs.length; i++) {
+            if (normalizedInputs[i].length !== 1) {
+                throw new Error(
+                    `inputs[${i}] has ${normalizedInputs[i].length} chunks; auto-chunking expects one string per document`,
+                );
+            }
+        }
+    }
+
+    return { ...request, inputs: normalizedInputs };
+}
+
+export function applyChunking(inputs: string[][], chunkFn: ChunkFn): string[][] {
+    return inputs.map((doc) => doc.flatMap((text) => chunkFn(text)));
+}
+
+const DEFAULT_CHUNK_SIZE = 2048;
+const SEPARATORS = [
+    "\n\n",
+    "\n",
+    "．", // Fullwidth full stop
+    "。", // Ideographic full stop
+    "，", // Fullwidth comma
+    "、", // Ideographic comma
+    ".",
+    ",",
+    " ",
+    "​", // Zero-width space
+    "",
+];
+
+function recursiveSplit(text: string, separators: string[], chunkSize: number): string[] {
+    if (text.length <= chunkSize) {
+        return [text];
+    }
+
+    const sep = separators[0];
+    const remainingSeparators = separators.slice(1);
+
+    if (sep === undefined || sep === "") {
+        const chunks: string[] = [];
+        for (let i = 0; i < text.length; i += chunkSize) {
+            chunks.push(text.slice(i, i + chunkSize));
+        }
+        return chunks;
+    }
+
+    const parts = text.split(sep);
+    const chunks: string[] = [];
+    let current = "";
+
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const piece = i < parts.length - 1 ? part + sep : part;
+
+        if (current.length + piece.length <= chunkSize) {
+            current += piece;
+        } else {
+            if (current.length > 0) {
+                chunks.push(current);
+            }
+            if (piece.length <= chunkSize) {
+                current = piece;
+            } else {
+                const subChunks = recursiveSplit(piece, remainingSeparators, chunkSize);
+                chunks.push(...subChunks.slice(0, -1));
+                current = subChunks[subChunks.length - 1];
+            }
+        }
+    }
+
+    if (current.length > 0) {
+        chunks.push(current);
+    }
+
+    return chunks;
+}
+
+export function defaultChunkFn(chunkSize: number = DEFAULT_CHUNK_SIZE): ChunkFn {
+    return (text: string): string[] => {
+        if (text.length === 0) {
+            return [text];
+        }
+        return recursiveSplit(text, SEPARATORS, chunkSize);
+    };
 }
