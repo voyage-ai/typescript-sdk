@@ -16,6 +16,20 @@ export interface ContextualizedEmbedOptions extends VoyageAI.ContextualizedEmbed
     chunkFn?: ChunkFn;
 }
 
+export interface ContextualizedEmbeddingsResultItem {
+    index: number;
+    embeddings: number[][];
+    chunkTexts?: string[];
+}
+
+export interface ContextualizedEmbedResult {
+    results: ContextualizedEmbeddingsResultItem[];
+    totalTokens: number;
+    chunkTexts?: string[][];
+    chunkerVersion?: string;
+    rawResponse: VoyageAI.ContextualizedEmbedResponse;
+}
+
 export class VoyageAIClient extends GeneratedClient {
     /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
@@ -55,15 +69,18 @@ export class VoyageAIClient extends GeneratedClient {
     /**
      * Contextualized embeddings with client-side chunking and server-side auto-chunking support.
      *
+     * Returns a `ContextualizedEmbedResult` wrapping the API response with extracted
+     * embeddings, chunk texts, and token counts — mirroring the Python SDK's
+     * `ContextualizedEmbeddingsObject`.
+     *
      * @param request - Embed request with optional `chunkFn` for client-side chunking.
-     *   When `chunkFn` is provided, each document string is split into chunks locally
-     *   before being sent to the API. Cannot be combined with `enableAutoChunking`.
      * @param requestOptions - Request-specific configuration.
      */
-    public contextualizedEmbed(
+    // @ts-expect-error Return type narrowed from HttpResponsePromise to wrapped result
+    public async contextualizedEmbed(
         request: ContextualizedEmbedOptions,
         requestOptions?: GeneratedClient.RequestOptions,
-    ): HttpResponsePromise<VoyageAI.ContextualizedEmbedResponse> {
+    ): Promise<ContextualizedEmbedResult> {
         const { chunkFn, ...apiRequest } = request;
         const normalizedRequest = validateAndNormalizeContextualizedInputs(apiRequest, chunkFn);
 
@@ -71,7 +88,13 @@ export class VoyageAIClient extends GeneratedClient {
             ? applyChunking(normalizedRequest.inputs as string[][], chunkFn)
             : normalizedRequest.inputs;
 
-        return super.contextualizedEmbed({ ...normalizedRequest, inputs: requestInputs }, requestOptions);
+        const response = await super.contextualizedEmbed(
+            { ...normalizedRequest, inputs: requestInputs },
+            requestOptions,
+        );
+
+        const clientChunkTexts = chunkFn ? (requestInputs as string[][]) : undefined;
+        return buildContextualizedResult(response, clientChunkTexts);
     }
 
     /**
@@ -90,6 +113,62 @@ export class VoyageAIClient extends GeneratedClient {
     public async tokenize(texts: string[], model: string): Promise<TokenizeResult[]> {
         return tokenizeTexts(model, texts);
     }
+}
+
+export function buildContextualizedResult(
+    response: VoyageAI.ContextualizedEmbedResponse,
+    clientChunkTexts?: string[][],
+): ContextualizedEmbedResult {
+    const results: ContextualizedEmbeddingsResultItem[] = [];
+    const serverTextsPerDoc: (string[] | undefined)[] = [];
+
+    for (let i = 0; i < (response.data ?? []).length; i++) {
+        const doc = response.data![i];
+        const embeddings = (doc.data ?? []).map((chunk) => chunk.embedding ?? []);
+
+        let chunkTexts: string[] | undefined;
+
+        if (clientChunkTexts !== undefined) {
+            chunkTexts = clientChunkTexts[i];
+        } else {
+            const perDocTexts = (doc.data ?? []).map((chunk) => chunk.text);
+            if (perDocTexts.every((t) => t !== undefined)) {
+                serverTextsPerDoc.push(perDocTexts as string[]);
+                chunkTexts = perDocTexts as string[];
+            } else if (perDocTexts.some((t) => t !== undefined)) {
+                throw new Error(
+                    `inputs[${i}] returned a partial set of chunk texts; expected text on every chunk or none`,
+                );
+            } else {
+                serverTextsPerDoc.push(undefined);
+                chunkTexts = undefined;
+            }
+        }
+
+        results.push({ index: i, embeddings, chunkTexts });
+    }
+
+    let resultChunkTexts: string[][] | undefined;
+
+    if (clientChunkTexts !== undefined) {
+        resultChunkTexts = clientChunkTexts;
+    } else if (serverTextsPerDoc.length > 0) {
+        const populated = serverTextsPerDoc.filter((t): t is string[] => t !== undefined);
+        if (populated.length > 0 && populated.length !== serverTextsPerDoc.length) {
+            throw new Error("response returned chunk texts for some documents but not others; expected all-or-nothing");
+        }
+        if (populated.length > 0) {
+            resultChunkTexts = populated;
+        }
+    }
+
+    return {
+        results,
+        totalTokens: response.usage?.totalTokens ?? 0,
+        chunkTexts: resultChunkTexts,
+        chunkerVersion: response.chunkerVersion,
+        rawResponse: response,
+    };
 }
 
 function isFlatStringArray(inputs: string[][] | string[]): inputs is string[] {
@@ -226,11 +305,23 @@ function recursiveSplit(text: string, separators: string[], chunkSize: number): 
     return chunks;
 }
 
-export function defaultChunkFn(chunkSize: number = DEFAULT_CHUNK_SIZE): ChunkFn {
+function addOverlap(chunks: string[], overlap: number): string[] {
+    if (overlap === 0 || chunks.length <= 1) return chunks;
+    const result = [chunks[0]];
+    for (let i = 1; i < chunks.length; i++) {
+        const prev = chunks[i - 1];
+        const overlapText = prev.slice(-overlap);
+        result.push(overlapText + chunks[i]);
+    }
+    return result;
+}
+
+export function defaultChunkFn(chunkSize: number = DEFAULT_CHUNK_SIZE, chunkOverlap: number = 0): ChunkFn {
     return (text: string): string[] => {
         if (text.length === 0) {
             return [text];
         }
-        return recursiveSplit(text, SEPARATORS, chunkSize);
+        const chunks = recursiveSplit(text, SEPARATORS, chunkSize);
+        return addOverlap(chunks, chunkOverlap);
     };
 }

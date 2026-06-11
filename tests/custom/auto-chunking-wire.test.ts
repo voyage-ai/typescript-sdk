@@ -125,12 +125,13 @@ describe("auto-chunking wire tests", () => {
             .jsonBody(rawResponseBody)
             .build();
 
-        const response = await client.contextualizedEmbed({
+        const result = await client.contextualizedEmbed({
             inputs: [["Hello world"]],
             model: "model",
             chunkFn: (text) => text.split(/(?<= )/),
         });
-        expect(response.data!.length).toBe(1);
-        expect(response.data![0].data!.length).toBe(2);
+        expect(result.results.length).toBe(1);
+        expect(result.results[0].embeddings.length).toBe(2);
+        expect(result.chunkTexts).toEqual([["Hello ", "world"]]);
     });
 });
