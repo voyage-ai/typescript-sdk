@@ -1,7 +1,6 @@
 # Specify files that shouldn't be modified by Fern
 tests/custom
 tests/integration
-tests/wire
 .github/workflows/ci.yml
 vitest.config.mts
 LICENSE
