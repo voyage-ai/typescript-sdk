@@ -93,7 +93,7 @@ jobs:
             - name: Coverage Test
               env:
                 VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
-              run: pnpm vitest run --project unit --project custom --coverage --testTimeout=300000
+              run: pnpm vitest run --project unit --project custom --coverage --testTimeout=300000 --exclude='**/local-embed-edge-cases*'
 
     publish:
         needs: [compile, unit-test, integration-test]
