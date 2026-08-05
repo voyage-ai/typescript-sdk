@@ -53,6 +53,34 @@ function apiKeyConfigured(options: ExtendedClientOptions): boolean {
     return typeof process !== "undefined" && process.env?.VOYAGE_API_KEY != null;
 }
 
+/**
+ * Normalize a SageMaker embed/multimodal response body to the Voyage API envelope.
+ *
+ * Some legacy SageMaker Marketplace containers (e.g. the `voyage-multimodal-3` package)
+ * return `data` as a list of bare float arrays instead of `{ object, embedding, index }`
+ * objects. Wrap those so callers always get the same `data[i].embedding` shape regardless
+ * of which endpoint served the request. Bodies already in object form pass through untouched,
+ * so this is a no-op for current endpoints and for the Voyage API path.
+ */
+function normalizeSageMakerEmbeddingBody(body: unknown): unknown {
+    if (body == null || typeof body !== "object") {
+        return body;
+    }
+    const obj = body as { data?: unknown };
+    if (!Array.isArray(obj.data)) {
+        return body;
+    }
+    let mutated = false;
+    const data = obj.data.map((item, index) => {
+        if (Array.isArray(item)) {
+            mutated = true;
+            return { object: "embedding", embedding: item, index };
+        }
+        return item;
+    });
+    return mutated ? { ...obj, data } : body;
+}
+
 export interface ContextualizedEmbedOptions extends VoyageAI.ContextualizedEmbedRequest {
     chunkFn?: ChunkFn;
 }
@@ -166,7 +194,11 @@ export class VoyageAIClient extends GeneratedClient {
                     sm,
                     request.model,
                     () => toJson(serializers.MultimodalEmbedRequest.jsonOrThrow(request, REQUEST_SERIALIZE_OPTIONS)),
-                    (body) => serializers.MultimodalEmbedResponse.parseOrThrow(body, RESPONSE_PARSE_OPTIONS),
+                    (body) =>
+                        serializers.MultimodalEmbedResponse.parseOrThrow(
+                            normalizeSageMakerEmbeddingBody(body),
+                            RESPONSE_PARSE_OPTIONS,
+                        ),
                     () => super.multimodalEmbed(request, requestOptions),
                     requestOptions,
                 ),
@@ -260,7 +292,10 @@ export class VoyageAIClient extends GeneratedClient {
             bodyString,
             this.sageMakerRequestOptions(requestOptions),
         );
-        const data = serializers.EmbedResponse.parseOrThrow(body, RESPONSE_PARSE_OPTIONS);
+        const data = serializers.EmbedResponse.parseOrThrow(
+            normalizeSageMakerEmbeddingBody(body),
+            RESPONSE_PARSE_OPTIONS,
+        );
         return { data, rawResponse };
     }
 

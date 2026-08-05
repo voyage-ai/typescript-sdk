@@ -8,18 +8,26 @@
  * `voyageai:model` tag and the name convention are disambiguators / zero-candidate
  * fallbacks, not standalone tiers.
  *
- * NOTE (spec T6): the token-boundary predicate below cannot always distinguish
- * `voyage-4` from a `voyage-4-large` package. The deterministic escape hatches are the
- * `endpointMap` (T1) and the `voyageai:model` tag (T3). Phase V live verification of the
- * real model-package ARN format was NOT performed (no live AWS account was available to
- * the implementer), so the predicate is left at the spec's token-boundary default.
- * Observed ARN format: UNVERIFIED — expected shape
- * `arn:aws:sagemaker:<region>:<acct>:model-package/<name>[-<version>]`, matched on the
- * final `/`-delimited resource segment, normalized.
+ * ARN format (live-verified against Voyage's SageMaker Marketplace packages):
+ * `arn:aws:sagemaker:<region>:<acct>:model-package/<name>[-v<version>-<hash>]`, e.g.
+ * `.../model-package/voyage-4-lite-v3-75769a90…`, `.../voyage-multimodal-3-5-v1-28013f9c…`,
+ * and the bare marketplace form `.../voyage-multimodal-3`. Matching is done on the final
+ * `/`-delimited resource segment, normalized.
+ *
+ * Two ARN match tiers, checked per endpoint (spec T2):
+ *   (a) EXACT — the segment with any `-v<version>-<hash>` suffix stripped equals the
+ *       normalized model name. This is the deterministic, metadata-driven mapping and it
+ *       is what disambiguates e.g. `voyage-multimodal-3` from `voyage-multimodal-3-5`:
+ *       stripping leaves `voyage-multimodal-3` vs `voyage-multimodal-3-5`, which differ.
+ *   (b) TOKEN-BOUNDARY — looser containment fallback for ARNs that do not follow the
+ *       `-v<version>-<hash>` convention. Only consulted when tier (a) finds no endpoint,
+ *       so it never reintroduces the `voyage-3` / `voyage-3-large` ambiguity for the
+ *       versioned packages above. The `endpointMap` (T1) and `voyageai:model` tag (T3)
+ *       remain the escape hatches when even (b) is ambiguous.
  */
 
 import type { SageMakerConfig } from "./config.js";
-import { SageMakerResolutionError } from "./errors.js";
+import { SageMakerAuthError, SageMakerResolutionError } from "./errors.js";
 
 /** Discovery primitives, mirroring the underlying AWS SageMaker control-plane calls. */
 export interface SageMakerDiscovery {
@@ -43,6 +51,15 @@ export function normalizeName(value: string): string {
 function arnResourceSegment(arn: string): string {
     const slash = arn.lastIndexOf("/");
     return slash === -1 ? arn : arn.slice(slash + 1);
+}
+
+/**
+ * Strip a trailing Voyage model-package version+hash suffix (`-v<version>` optionally
+ * followed by a `-<hex>` build hash) from a normalized ARN resource segment, leaving the
+ * bare model name. No-op for segments without the suffix (e.g. marketplace `voyage-multimodal-3`).
+ */
+export function stripPackageVersionSuffix(normSegment: string): string {
+    return normSegment.replace(/-v\d+(?:-[0-9a-f]{6,})?$/, "");
 }
 
 /**
@@ -119,17 +136,21 @@ export class SageMakerEndpointResolver {
         const normModel = normalizeName(model);
         const inventory: Inventory = { endpointNames: await this.discovery.listInServiceEndpointNames() };
 
-        // T2 — discovery (default path).
-        const candidates: string[] = [];
+        // T2 — discovery (default path). Prefer exact metadata matches (version+hash
+        // suffix stripped); fall back to loose token-boundary matches only when no
+        // endpoint matches exactly, so versioned packages never collide.
+        const exact: string[] = [];
+        const loose: string[] = [];
         for (const endpointName of inventory.endpointNames) {
             const arns = await this.discovery.getEndpointModelPackageArns(endpointName);
-            const isCandidate = arns.some((arn) =>
-                matchesAtTokenBoundary(normalizeName(arnResourceSegment(arn)), normModel),
-            );
-            if (isCandidate) {
-                candidates.push(endpointName);
+            const normSegments = arns.map((arn) => normalizeName(arnResourceSegment(arn)));
+            if (normSegments.some((seg) => stripPackageVersionSuffix(seg) === normModel)) {
+                exact.push(endpointName);
+            } else if (normSegments.some((seg) => matchesAtTokenBoundary(seg, normModel))) {
+                loose.push(endpointName);
             }
         }
+        const candidates = exact.length > 0 ? exact : loose;
 
         if (candidates.length === 1) {
             return candidates[0];
@@ -142,11 +163,29 @@ export class SageMakerEndpointResolver {
         return this.conventionFallback(model, normModel, inventory.endpointNames);
     }
 
+    /**
+     * `getEndpointModelTag`, degrading a tag-permission denial to "no tag". The tag is only
+     * a secondary disambiguator; by the time it is consulted the primary discovery calls
+     * (ListEndpoints/DescribeEndpoint/…) have already succeeded with the same credentials,
+     * so a missing `sagemaker:ListTags` permission must not hard-fail resolution — it should
+     * degrade so the resolution-not-found path (and thus API fallback) stays reachable.
+     */
+    private async safeTag(name: string): Promise<string | undefined> {
+        try {
+            return await this.discovery.getEndpointModelTag(name);
+        } catch (error) {
+            if (error instanceof SageMakerAuthError) {
+                return undefined;
+            }
+            throw error;
+        }
+    }
+
     private async disambiguate(model: string, normModel: string, candidates: string[]): Promise<string> {
         // (a) exactly one candidate tagged voyageai:model == model (case-sensitive).
         const tagged: string[] = [];
         for (const name of candidates) {
-            const tagValue = await this.discovery.getEndpointModelTag(name);
+            const tagValue = await this.safeTag(name);
             if (tagValue === model) {
                 tagged.push(name);
             }
@@ -166,7 +205,7 @@ export class SageMakerEndpointResolver {
         // (a) exactly one InService endpoint tagged voyageai:model == model.
         const tagged: string[] = [];
         for (const name of allNames) {
-            const tagValue = await this.discovery.getEndpointModelTag(name);
+            const tagValue = await this.safeTag(name);
             if (tagValue === model) {
                 tagged.push(name);
             }

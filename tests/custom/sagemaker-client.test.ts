@@ -157,6 +157,32 @@ describe("SageMaker routing", () => {
         await expect(client.embed({ model: "voyage-3", input: "hi" })).rejects.toThrow(/No SageMaker endpoint/);
     });
 
+    test("legacy bare-array embedding data is normalized to the {embedding} envelope", async () => {
+        // The voyage-multimodal-3 marketplace container returns data as bare float arrays.
+        const legacyBody = { object: "list", data: [[0.5, 0.6, 0.7]], model: "voyage-multimodal-3" };
+        const fetchMock = vi.fn(async () => jsonResponse(legacyBody));
+        const client = new VoyageAIClient({
+            apiKey: "key",
+            awsSagemaker: { region: "us-east-1" },
+            fetch: fetchMock as unknown as typeof fetch,
+        });
+        injectRuntime(
+            client,
+            new SageMakerRuntime(config, {
+                hasApiKey: true,
+                depsLoader: async () => depsResolving("mm-ep", "voyage-multimodal-3"),
+            }),
+        );
+
+        const result = await client.multimodalEmbed({
+            model: "voyage-multimodal-3",
+            inputs: [{ content: [{ type: "text", text: "hi" }] }],
+        });
+        expect(result.data?.[0]?.embedding).toEqual([0.5, 0.6, 0.7]);
+        expect(result.data?.[0]?.object).toBe("embedding");
+        expect(result.data?.[0]?.index).toBe(0);
+    });
+
     test("rerank is routed to the resolved SageMaker endpoint", async () => {
         const rerankBody = { object: "list", data: [{ index: 0, relevance_score: 0.9 }], model: "rerank-2" };
         const fetchMock = vi.fn(async () => jsonResponse(rerankBody));

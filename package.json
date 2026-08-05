@@ -93,15 +93,20 @@
         }
     },
     "devDependencies": {
-        "@types/node-fetch": "^2.6.12",
-        "webpack": "^5.97.1",
-        "ts-loader": "^9.5.1",
-        "vitest": "^3.2.4",
-        "msw": "2.11.2",
-        "@types/node": "^18.19.70",
-        "typescript": "~5.7.2",
+        "@aws-crypto/sha256-js": "^5.2.0",
+        "@aws-sdk/client-sagemaker": "^3.1103.0",
+        "@aws-sdk/credential-providers": "^3.1103.0",
         "@biomejs/biome": "2.3.11",
-        "@vitest/coverage-v8": "^3.2.4"
+        "@smithy/protocol-http": "^5.5.16",
+        "@smithy/signature-v4": "^5.6.12",
+        "@types/node": "^18.19.70",
+        "@types/node-fetch": "^2.6.12",
+        "@vitest/coverage-v8": "^3.2.4",
+        "msw": "2.11.2",
+        "ts-loader": "^9.5.1",
+        "typescript": "~5.7.2",
+        "vitest": "^3.2.4",
+        "webpack": "^5.97.1"
     },
     "browser": {
         "fs": false,

@@ -5,12 +5,13 @@
  */
 
 import type { SageMakerConfig } from "../../src/sagemaker/config";
-import { SageMakerResolutionError } from "../../src/sagemaker/errors";
+import { SageMakerAuthError, SageMakerResolutionError } from "../../src/sagemaker/errors";
 import {
     matchesAtTokenBoundary,
     normalizeName,
     type SageMakerDiscovery,
     SageMakerEndpointResolver,
+    stripPackageVersionSuffix,
 } from "../../src/sagemaker/resolver";
 
 function config(endpointMap: Record<string, string> = {}): SageMakerConfig {
@@ -58,6 +59,18 @@ describe("matchesAtTokenBoundary", () => {
 describe("normalizeName", () => {
     test("lowercases and dots to dashes", () => {
         expect(normalizeName("Voyage.3.Large")).toBe("voyage-3-large");
+    });
+});
+
+describe("stripPackageVersionSuffix", () => {
+    test("strips -v<version>-<hash>", () => {
+        expect(stripPackageVersionSuffix("voyage-4-lite-v3-75769a90d6cb3a43b0ab6c5e17c69f7f")).toBe("voyage-4-lite");
+        expect(stripPackageVersionSuffix("voyage-multimodal-3-5-v1-28013f9c1fac3211bb9b6ead1b00531e")).toBe(
+            "voyage-multimodal-3-5",
+        );
+    });
+    test("no-op without a version suffix (marketplace form)", () => {
+        expect(stripPackageVersionSuffix("voyage-multimodal-3")).toBe("voyage-multimodal-3");
     });
 });
 
@@ -122,6 +135,37 @@ describe("SageMakerEndpointResolver", () => {
         const discovery = new FakeDiscovery([{ name: "ep-a", arns: [arn("other-model")] }]);
         const resolver = new SageMakerEndpointResolver(config(), discovery);
         await expect(resolver.resolve("voyage-3")).rejects.toThrow(/No SageMaker endpoint found/);
+    });
+
+    test("exact metadata match disambiguates versioned vs marketplace packages", async () => {
+        // Real live shape: a versioned package and a bare marketplace package coexist.
+        const discovery = new FakeDiscovery([
+            { name: "voyage-multimodal-3-5-dev", arns: [arn("voyage-multimodal-3-5-v1-28013f9c1fac3211bb9b6ead1b0")] },
+            { name: "multimodal-3", arns: [arn("voyage-multimodal-3")] },
+        ]);
+        const resolver = new SageMakerEndpointResolver(config(), discovery);
+        // Token-boundary alone would make voyage-multimodal-3 ambiguous; exact match resolves it.
+        expect(await resolver.resolve("voyage-multimodal-3")).toBe("multimodal-3");
+        expect(await resolver.resolve("voyage-multimodal-3.5")).toBe("voyage-multimodal-3-5-dev");
+    });
+
+    test("exact match preferred over a looser token-boundary match", async () => {
+        const discovery = new FakeDiscovery([
+            { name: "exact-ep", arns: [arn("voyage-3-v2-deadbeefcafe")] },
+            { name: "loose-ep", arns: [arn("voyage-3-large-v1-abc123")] },
+        ]);
+        const resolver = new SageMakerEndpointResolver(config(), discovery);
+        expect(await resolver.resolve("voyage-3")).toBe("exact-ep");
+    });
+
+    test("tag-permission denial degrades to no-tag (keeps fallback path reachable)", async () => {
+        const discovery = new FakeDiscovery([{ name: "ep-a", arns: [arn("other-model")] }]);
+        discovery.getEndpointModelTag = async (): Promise<string | undefined> => {
+            throw new SageMakerAuthError("denied ListTags");
+        };
+        const resolver = new SageMakerEndpointResolver(config(), discovery);
+        // Must surface a resolution error (not the auth error) so API fallback stays possible.
+        await expect(resolver.resolve("voyage-3")).rejects.toBeInstanceOf(SageMakerResolutionError);
     });
 
     test("result is cached; discovery runs once", async () => {
