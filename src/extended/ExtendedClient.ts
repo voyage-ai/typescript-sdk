@@ -3,14 +3,55 @@
  */
 
 import type * as VoyageAI from "../api/index.js";
+import type { BaseClientOptions } from "../BaseClient.js";
 import { VoyageAIClient as GeneratedClient } from "../Client.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
+import type { WithRawResponse } from "../core/fetcher/RawResponse.js";
 import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
+import { toJson } from "../core/json.js";
+import type { SchemaOptions } from "../core/schemas/index.js";
 import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
 import { tokenizeTexts } from "../local/tokenizer.js";
+import type { AwsSagemakerOptions } from "../sagemaker/config.js";
+import { resolveSageMakerConfig } from "../sagemaker/config.js";
+import { SageMakerResolutionError } from "../sagemaker/errors.js";
+import type { SageMakerRequestOptions } from "../sagemaker/runtime.js";
+import { SageMakerRuntime } from "../sagemaker/runtime.js";
+import * as serializers from "../serialization/index.js";
 
 export type ChunkFn = (text: string) => string[];
+
+/** Options accepted by the extended client, adding SageMaker activation to the base set. */
+export interface ExtendedClientOptions extends BaseClientOptions {
+    /**
+     * Activate the AWS SageMaker path. Pass an (optionally empty) object to route calls to
+     * SageMaker endpoints instead of the Voyage API. Region and credentials fall back to
+     * the standard AWS environment / default chain. When omitted, the `VOYAGE_SAGEMAKER`
+     * environment variable is consulted instead (constructor always wins).
+     */
+    awsSagemaker?: AwsSagemakerOptions;
+}
+
+const RESPONSE_PARSE_OPTIONS: SchemaOptions = {
+    unrecognizedObjectKeys: "passthrough",
+    allowUnrecognizedUnionMembers: true,
+    allowUnrecognizedEnumValues: true,
+    skipValidation: true,
+    breadcrumbsPrefix: ["response"],
+};
+
+const REQUEST_SERIALIZE_OPTIONS: SchemaOptions = {
+    unrecognizedObjectKeys: "strip",
+    omitUndefined: true,
+};
+
+function apiKeyConfigured(options: ExtendedClientOptions): boolean {
+    if (options.apiKey != null) {
+        return true;
+    }
+    return typeof process !== "undefined" && process.env?.VOYAGE_API_KEY != null;
+}
 
 export interface ContextualizedEmbedOptions extends VoyageAI.ContextualizedEmbedRequest {
     chunkFn?: ChunkFn;
@@ -32,9 +73,25 @@ export interface ContextualizedEmbedResult {
 
 export class VoyageAIClient extends GeneratedClient {
     /**
+     * SageMaker runtime, present only when the SageMaker path is activated (via the
+     * `awsSagemaker` option or the `VOYAGE_SAGEMAKER` env var). When absent, behavior is
+     * byte-for-byte identical to the generated client.
+     */
+    protected readonly _sagemaker: SageMakerRuntime | undefined;
+
+    constructor(options: ExtendedClientOptions = {}) {
+        const { awsSagemaker, ...baseOptions } = options;
+        super(baseOptions);
+        const config = resolveSageMakerConfig(awsSagemaker);
+        this._sagemaker =
+            config === undefined ? undefined : new SageMakerRuntime(config, { hasApiKey: apiKeyConfigured(options) });
+    }
+
+    /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
      *
      * For local models (e.g., 'voyage-4-nano'), embeddings are computed locally using Transformers.js.
+     * When the SageMaker path is active, the model is resolved to a SageMaker endpoint.
      * For all other models, the request is forwarded to the Voyage AI API.
      *
      * @param {VoyageAI.EmbedRequest} request
@@ -58,12 +115,64 @@ export class VoyageAIClient extends GeneratedClient {
         request: VoyageAI.EmbedRequest,
         requestOptions?: GeneratedClient.RequestOptions,
     ): HttpResponsePromise<VoyageAI.EmbedResponse> {
+        // R2: local model beats SageMaker (embed only), unchanged.
         if (isLocalModel(request.model)) {
             return HttpResponsePromise.fromPromise(
                 localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse })),
             );
         }
+        if (this._sagemaker !== undefined) {
+            return HttpResponsePromise.fromPromise(this.embedViaSageMaker(this._sagemaker, request, requestOptions));
+        }
         return super.embed(request, requestOptions);
+    }
+
+    /**
+     * Voyage reranker endpoint. Routed to a SageMaker endpoint when the SageMaker path is
+     * active, otherwise forwarded to the Voyage API.
+     */
+    public rerank(
+        request: VoyageAI.RerankRequest,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): HttpResponsePromise<VoyageAI.RerankResponse> {
+        if (this._sagemaker !== undefined) {
+            const sm = this._sagemaker;
+            return HttpResponsePromise.fromPromise(
+                this.runViaSageMaker(
+                    sm,
+                    request.model,
+                    () => toJson(serializers.RerankRequest.jsonOrThrow(request, REQUEST_SERIALIZE_OPTIONS)),
+                    (body) => serializers.RerankResponse.parseOrThrow(body, RESPONSE_PARSE_OPTIONS),
+                    () => super.rerank(request, requestOptions),
+                    requestOptions,
+                ),
+            );
+        }
+        return super.rerank(request, requestOptions);
+    }
+
+    /**
+     * Voyage multimodal embedding endpoint. Routed to a SageMaker endpoint when the
+     * SageMaker path is active, otherwise forwarded to the Voyage API.
+     */
+    public multimodalEmbed(
+        request: VoyageAI.MultimodalEmbedRequest,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): HttpResponsePromise<VoyageAI.MultimodalEmbedResponse> {
+        if (this._sagemaker !== undefined) {
+            const sm = this._sagemaker;
+            return HttpResponsePromise.fromPromise(
+                this.runViaSageMaker(
+                    sm,
+                    request.model,
+                    () => toJson(serializers.MultimodalEmbedRequest.jsonOrThrow(request, REQUEST_SERIALIZE_OPTIONS)),
+                    (body) => serializers.MultimodalEmbedResponse.parseOrThrow(body, RESPONSE_PARSE_OPTIONS),
+                    () => super.multimodalEmbed(request, requestOptions),
+                    requestOptions,
+                ),
+            );
+        }
+        return super.multimodalEmbed(request, requestOptions);
     }
 
     /**
@@ -71,7 +180,8 @@ export class VoyageAIClient extends GeneratedClient {
      *
      * Returns a `ContextualizedEmbedResult` wrapping the API response with extracted
      * embeddings, chunk texts, and token counts — mirroring the Python SDK's
-     * `ContextualizedEmbeddingsObject`.
+     * `ContextualizedEmbeddingsObject`. Input validation and chunking run identically on
+     * both the API and SageMaker paths.
      *
      * @param request - Embed request with optional `chunkFn` for client-side chunking.
      * @param requestOptions - Request-specific configuration.
@@ -87,14 +197,91 @@ export class VoyageAIClient extends GeneratedClient {
         const requestInputs = chunkFn
             ? applyChunking(normalizedRequest.inputs as string[][], chunkFn)
             : normalizedRequest.inputs;
-
-        const response = await super.contextualizedEmbed(
-            { ...normalizedRequest, inputs: requestInputs },
-            requestOptions,
-        );
-
+        const finalRequest = { ...normalizedRequest, inputs: requestInputs };
         const clientChunkTexts = chunkFn ? (requestInputs as string[][]) : undefined;
+
+        const sm = this._sagemaker;
+        if (sm !== undefined) {
+            const endpoint = await this.resolveOrFallback(sm, finalRequest.model);
+            if (endpoint !== undefined) {
+                const bodyString = toJson(
+                    serializers.ContextualizedEmbedRequest.jsonOrThrow(finalRequest, REQUEST_SERIALIZE_OPTIONS),
+                );
+                const { body } = await sm.invoke(endpoint, bodyString, this.sageMakerRequestOptions(requestOptions));
+                const response = serializers.ContextualizedEmbedResponse.parseOrThrow(body, RESPONSE_PARSE_OPTIONS);
+                return buildContextualizedResult(response, clientChunkTexts);
+            }
+        }
+
+        const response = await super.contextualizedEmbed(finalRequest, requestOptions);
         return buildContextualizedResult(response, clientChunkTexts);
+    }
+
+    private sageMakerRequestOptions(requestOptions?: GeneratedClient.RequestOptions): SageMakerRequestOptions {
+        return {
+            timeoutInSeconds: requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetch: this._options?.fetch,
+            logging: this._options.logging,
+        };
+    }
+
+    /**
+     * Resolve `model` to an endpoint, or return `undefined` to signal the caller should
+     * fall back to the API path. A no-candidate/ambiguous resolution error triggers the
+     * fallback (with a one-time warning) only when an API key is configured; otherwise it
+     * propagates. Invoke/auth errors always propagate.
+     */
+    private async resolveOrFallback(sm: SageMakerRuntime, model: string): Promise<string | undefined> {
+        try {
+            return await sm.resolveEndpoint(model);
+        } catch (error) {
+            if (error instanceof SageMakerResolutionError && sm.hasApiKey) {
+                sm.warnOnce(model, (error as Error).message);
+                return undefined;
+            }
+            throw error;
+        }
+    }
+
+    private async embedViaSageMaker(
+        sm: SageMakerRuntime,
+        request: VoyageAI.EmbedRequest,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): Promise<WithRawResponse<VoyageAI.EmbedResponse>> {
+        const endpoint = await this.resolveOrFallback(sm, request.model);
+        if (endpoint === undefined) {
+            return super.embed(request, requestOptions).withRawResponse();
+        }
+        const bodyString = toJson(serializers.EmbedRequest.jsonOrThrow(request, REQUEST_SERIALIZE_OPTIONS));
+        const { body, rawResponse } = await sm.invoke(
+            endpoint,
+            bodyString,
+            this.sageMakerRequestOptions(requestOptions),
+        );
+        const data = serializers.EmbedResponse.parseOrThrow(body, RESPONSE_PARSE_OPTIONS);
+        return { data, rawResponse };
+    }
+
+    private async runViaSageMaker<TResp>(
+        sm: SageMakerRuntime,
+        model: string,
+        serializeBody: () => string,
+        parseResponse: (body: unknown) => TResp,
+        apiFallback: () => HttpResponsePromise<TResp>,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): Promise<WithRawResponse<TResp>> {
+        const endpoint = await this.resolveOrFallback(sm, model);
+        if (endpoint === undefined) {
+            return apiFallback().withRawResponse();
+        }
+        const { body, rawResponse } = await sm.invoke(
+            endpoint,
+            serializeBody(),
+            this.sageMakerRequestOptions(requestOptions),
+        );
+        return { data: parseResponse(body), rawResponse };
     }
 
     /**

@@ -21,6 +21,7 @@ The Voyage TypeScript library provides convenient access to the Voyage APIs from
   - [Aborting Requests](#aborting-requests)
   - [Access Raw Response Data](#access-raw-response-data)
   - [Logging](#logging)
+  - [AWS SageMaker](#aws-sagemaker)
   - [Runtime Compatibility](#runtime-compatibility)
 - [Contributing](#contributing)
 - [Reference](#reference)
@@ -246,6 +247,84 @@ const logger: logging.ILogger = {
 };
 ```
 </details>
+
+
+### AWS SageMaker
+
+The same `VoyageAIClient` can transparently call Voyage models deployed as
+[AWS SageMaker real-time inference endpoints](https://aws.amazon.com/sagemaker/) instead of the Voyage API.
+Requests are authenticated with your AWS credentials (SigV4), not a Voyage API key, and you keep using the
+standard Voyage model names — no separate client class and no call-site changes.
+
+#### Installation
+
+The AWS SDK packages are **optional peer dependencies**, imported lazily only when the SageMaker path is
+activated. Install them alongside the SDK:
+
+```bash
+npm install @aws-sdk/client-sagemaker @aws-sdk/credential-providers @smithy/signature-v4 @smithy/protocol-http @aws-crypto/sha256-js
+```
+
+#### Activation
+
+Activate SageMaker either with the `awsSagemaker` constructor option or the `VOYAGE_SAGEMAKER` environment
+variable (the constructor option always wins):
+
+```typescript
+import { VoyageAIClient } from "voyageai";
+
+// Region + credentials fall back to the standard AWS environment / default provider chain.
+const client = new VoyageAIClient({ awsSagemaker: {} });
+
+// Or configure explicitly:
+const client = new VoyageAIClient({
+    awsSagemaker: {
+        region: "us-east-1",
+        // Optional explicit static credentials (otherwise the default chain is used):
+        awsAccessKeyId: "AKIA...",
+        awsSecretAccessKey: "...",
+        // Or a named profile (mutually exclusive with the keys above):
+        // profileName: "my-profile",
+        // Optional explicit model -> endpoint overrides (highest-priority resolution):
+        endpointMap: { "voyage-3-large": "my-voyage-endpoint" },
+    },
+});
+
+await client.embed({ input: "hello world", model: "voyage-3-large" });
+```
+
+Environment-variable activation:
+
+```bash
+export VOYAGE_SAGEMAKER=1
+export AWS_REGION=us-east-1
+# Optional explicit overrides (comma-separated model=endpoint pairs):
+export VOYAGE_SAGEMAKER_ENDPOINT_MAP="voyage-3=my-ep-a,voyage-3-large=my-ep-b"
+```
+
+#### Endpoint resolution
+
+For each call the model name is resolved to a SageMaker endpoint using, in order:
+
+1. **Explicit `endpointMap` override** — exact model-name match, no AWS calls.
+2. **Auto-discovery (default)** — the account's `InService` endpoints are inspected and matched against the
+   Voyage model-package ARN embedded in each endpoint's model.
+3. **Convention fallback** — an endpoint tagged `voyageai:model=<model>`, or whose name equals the normalized
+   model name.
+
+Resolutions are cached per client. If discovery is ambiguous, disambiguate with the `voyageai:model` tag or an
+explicit `endpointMap` entry. Discovery requires the `sagemaker:ListEndpoints`, `DescribeEndpoint`,
+`DescribeEndpointConfig`, `DescribeModel`, and `ListTags` permissions — grant them, or bypass discovery entirely
+with `endpointMap`.
+
+#### Routing and fallback
+
+`embed`, `rerank`, `multimodalEmbed`, and `contextualizedEmbed` all route to SageMaker when it is active. Local
+models (e.g. `voyage-4-nano`) still resolve locally and take precedence for `embed`. When a model **cannot** be
+resolved to an endpoint and a Voyage API key is also configured, the SDK logs one warning per model and falls
+back to the Voyage API; without an API key the resolution error is raised. Credential/auth and invocation
+errors always surface — they never trigger a silent fallback. When SageMaker is not activated, behavior is
+byte-for-byte identical to the generated client.
 
 
 ### Runtime Compatibility

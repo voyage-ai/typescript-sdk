@@ -61,11 +61,31 @@
         "node-fetch": "^2.7.0"
     },
     "peerDependencies": {
+        "@aws-crypto/sha256-js": "^5.2.0",
+        "@aws-sdk/client-sagemaker": "^3.0.0",
+        "@aws-sdk/credential-providers": "^3.0.0",
         "@huggingface/transformers": "^3.8.0",
+        "@smithy/protocol-http": "^4.0.0 || ^5.0.0",
+        "@smithy/signature-v4": "^4.0.0 || ^5.0.0",
         "onnxruntime-node": ">=1.17.0"
     },
     "peerDependenciesMeta": {
+        "@aws-crypto/sha256-js": {
+            "optional": true
+        },
+        "@aws-sdk/client-sagemaker": {
+            "optional": true
+        },
+        "@aws-sdk/credential-providers": {
+            "optional": true
+        },
         "@huggingface/transformers": {
+            "optional": true
+        },
+        "@smithy/protocol-http": {
+            "optional": true
+        },
+        "@smithy/signature-v4": {
             "optional": true
         },
         "onnxruntime-node": {

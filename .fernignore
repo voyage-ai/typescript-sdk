@@ -6,4 +6,5 @@ vitest.config.mts
 LICENSE
 src/local/
 src/extended/
+src/sagemaker/
 .gitignore
