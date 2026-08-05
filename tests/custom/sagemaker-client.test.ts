@@ -181,6 +181,74 @@ describe("SageMaker routing", () => {
         expect(result.data?.[0]?.embedding).toEqual([0.5, 0.6, 0.7]);
         expect(result.data?.[0]?.object).toBe("embedding");
         expect(result.data?.[0]?.index).toBe(0);
+        // API always includes text on each item; the wrapped item mirrors it.
+        expect(result.data?.[0]?.text).toBeNull();
+    });
+
+    test("multimodal usage backfills the API pixel keys the container omits", async () => {
+        // The voyage-multimodal-3 container omits video_pixels; the API always reports it.
+        const body = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1, 0.2], index: 0 }],
+            model: "voyage-multimodal-3",
+            usage: { total_tokens: 4, text_tokens: 4, image_pixels: 0 },
+        };
+        const fetchMock = vi.fn(async () => jsonResponse(body));
+        const client = new VoyageAIClient({
+            apiKey: "key",
+            awsSagemaker: { region: "us-east-1" },
+            fetch: fetchMock as unknown as typeof fetch,
+        });
+        injectRuntime(
+            client,
+            new SageMakerRuntime(config, {
+                hasApiKey: true,
+                depsLoader: async () => depsResolving("mm-ep", "voyage-multimodal-3"),
+            }),
+        );
+
+        const result = await client.multimodalEmbed({
+            model: "voyage-multimodal-3",
+            inputs: [{ content: [{ type: "text", text: "hi" }] }],
+        });
+        const usage = result.usage as Record<string, unknown>;
+        expect(usage.video_pixels).toBe(0);
+        expect(usage.text_tokens).toBe(4);
+        expect(usage.image_pixels).toBe(0);
+        expect(result.usage?.totalTokens).toBe(4);
+    });
+
+    test("SageMaker-only top-level telemetry keys are stripped for API parity", async () => {
+        // voyage-4-lite's container adds inference_ms / total_embed_ms; the API never returns them.
+        const telemetryBody = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1, 0.2], index: 0 }],
+            model: "voyage-4-lite",
+            usage: { total_tokens: 3, text_tokens: 3 },
+            inference_ms: 12,
+            total_embed_ms: 15,
+        };
+        const fetchMock = vi.fn(async () => jsonResponse(telemetryBody));
+        const client = new VoyageAIClient({
+            apiKey: "key",
+            awsSagemaker: { region: "us-east-1" },
+            fetch: fetchMock as unknown as typeof fetch,
+        });
+        injectRuntime(
+            client,
+            new SageMakerRuntime(config, {
+                hasApiKey: true,
+                depsLoader: async () => depsResolving("lite-ep", "voyage-4-lite"),
+            }),
+        );
+
+        const result = await client.embed({ model: "voyage-4-lite", input: "hi" });
+        expect(Object.keys(result as object).sort()).toEqual(["data", "model", "object", "usage"]);
+        // Nested passthrough (usage sub-keys the API also returns) survives.
+        expect((result.usage as Record<string, unknown>).text_tokens).toBe(3);
+        expect(result.data?.[0]?.embedding).toEqual([0.1, 0.2]);
+        // Embed items get text: null too, matching the API envelope.
+        expect(result.data?.[0]?.text).toBeNull();
     });
 
     test("rerank is routed to the resolved SageMaker endpoint", async () => {
