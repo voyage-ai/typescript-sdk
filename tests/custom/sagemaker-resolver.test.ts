@@ -1,27 +1,28 @@
 /**
- * Endpoint resolution algorithm (spec §7): T1 override, T2 discovery, T3 convention,
- * disambiguation, caching, and the token-boundary predicate. Uses a fake discovery so
- * there is no AWS dependency or network.
+ * Endpoint resolution algorithm (spec §7): T1 override, T2 ProductId discovery,
+ * skipping of unknown/absent ProductIds, ambiguity, auth-error propagation, and caching.
+ * Uses a fake discovery so there is no AWS dependency or network.
  */
 
 import type { SageMakerConfig } from "../../src/sagemaker/config";
 import { SageMakerAuthError, SageMakerResolutionError } from "../../src/sagemaker/errors";
-import {
-    matchesAtTokenBoundary,
-    normalizeName,
-    type SageMakerDiscovery,
-    SageMakerEndpointResolver,
-    stripPackageVersionSuffix,
-} from "../../src/sagemaker/resolver";
+import { normalizeName, type SageMakerDiscovery, SageMakerEndpointResolver } from "../../src/sagemaker/resolver";
 
 function config(endpointMap: Record<string, string> = {}): SageMakerConfig {
     return { region: "us-east-1", endpointMap, credentials: { type: "default" } };
 }
 
+// Fake product map keyed off the same shape as the real one: ProductId -> model name.
+const PRODUCT_MAP: Readonly<Record<string, string>> = {
+    "prod-lite": "voyage-4-lite",
+    "prod-mm35": "voyage-multimodal-3.5",
+    "prod-ctx4": "voyage-context-4",
+    "prod-rr25": "rerank-2.5",
+};
+
 interface FakeEndpoint {
     name: string;
-    arns?: string[];
-    tag?: string;
+    productId?: string;
 }
 
 class FakeDiscovery implements SageMakerDiscovery {
@@ -32,29 +33,14 @@ class FakeDiscovery implements SageMakerDiscovery {
         this.listCalls += 1;
         return this.endpoints.map((e) => e.name);
     }
-    async getEndpointModelPackageArns(name: string): Promise<string[]> {
-        return this.endpoints.find((e) => e.name === name)?.arns ?? [];
-    }
-    async getEndpointModelTag(name: string): Promise<string | undefined> {
-        return this.endpoints.find((e) => e.name === name)?.tag;
+    async getEndpointProductId(name: string): Promise<string | undefined> {
+        return this.endpoints.find((e) => e.name === name)?.productId;
     }
 }
 
-const arn = (name: string): string => `arn:aws:sagemaker:us-east-1:123456789012:model-package/${name}`;
-
-describe("matchesAtTokenBoundary", () => {
-    test("matches at boundaries", () => {
-        expect(matchesAtTokenBoundary("voyage-3-large-abc", "voyage-3-large")).toBe(true);
-        expect(matchesAtTokenBoundary("prefix-voyage-3-v1", "voyage-3")).toBe(true);
-    });
-    test("rejects mid-token", () => {
-        expect(matchesAtTokenBoundary("voyage-30-v1", "voyage-3")).toBe(false);
-        expect(matchesAtTokenBoundary("voyage-3large", "voyage-3")).toBe(false);
-    });
-    test("empty model never matches", () => {
-        expect(matchesAtTokenBoundary("anything", "")).toBe(false);
-    });
-});
+function resolver(discovery: SageMakerDiscovery, endpointMap: Record<string, string> = {}): SageMakerEndpointResolver {
+    return new SageMakerEndpointResolver(config(endpointMap), discovery, PRODUCT_MAP);
+}
 
 describe("normalizeName", () => {
     test("lowercases and dots to dashes", () => {
@@ -62,124 +48,77 @@ describe("normalizeName", () => {
     });
 });
 
-describe("stripPackageVersionSuffix", () => {
-    test("strips -v<version>-<hash>", () => {
-        expect(stripPackageVersionSuffix("voyage-4-lite-v3-75769a90d6cb3a43b0ab6c5e17c69f7f")).toBe("voyage-4-lite");
-        expect(stripPackageVersionSuffix("voyage-multimodal-3-5-v1-28013f9c1fac3211bb9b6ead1b00531e")).toBe(
-            "voyage-multimodal-3-5",
-        );
-    });
-    test("no-op without a version suffix (marketplace form)", () => {
-        expect(stripPackageVersionSuffix("voyage-multimodal-3")).toBe("voyage-multimodal-3");
-    });
-});
-
 describe("SageMakerEndpointResolver", () => {
     test("T1 explicit map override wins, no AWS call", async () => {
         const discovery = new FakeDiscovery([]);
-        const resolver = new SageMakerEndpointResolver(config({ "voyage-3": "my-ep" }), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("my-ep");
+        const r = resolver(discovery, { "voyage-4-lite": "my-ep" });
+        expect(await r.resolve("voyage-4-lite")).toBe("my-ep");
         expect(discovery.listCalls).toBe(0);
     });
 
-    test("T2 single discovery candidate", async () => {
+    test("single discovery candidate by ProductId", async () => {
         const discovery = new FakeDiscovery([
-            { name: "ep-a", arns: [arn("voyage-3-large-1")] },
-            { name: "ep-b", arns: [arn("something-else")] },
+            { name: "ep-a", productId: "prod-lite" },
+            { name: "ep-b", productId: "prod-rr25" },
         ]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3-large")).toBe("ep-a");
+        expect(await resolver(discovery).resolve("voyage-4-lite")).toBe("ep-a");
     });
 
-    test("T2 ambiguous resolved by voyageai:model tag", async () => {
-        const discovery = new FakeDiscovery([
-            { name: "ep-a", arns: [arn("voyage-3")], tag: "voyage-3" },
-            { name: "ep-b", arns: [arn("voyage-3")], tag: "other" },
-        ]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("ep-a");
+    test("dot-normalized model matches the mapped name", async () => {
+        const discovery = new FakeDiscovery([{ name: "mm-ep", productId: "prod-mm35" }]);
+        // Request uses the dotted public name; the map value is also dotted — both normalize.
+        expect(await resolver(discovery).resolve("voyage-multimodal-3.5")).toBe("mm-ep");
     });
 
-    test("T2 ambiguous resolved by endpoint name convention", async () => {
-        const discovery = new FakeDiscovery([
-            { name: "voyage-3", arns: [arn("voyage-3")] },
-            { name: "ep-b", arns: [arn("voyage-3")] },
-        ]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("voyage-3");
+    test("unknown ProductId is skipped (not a public listing)", async () => {
+        // e.g. the internal voyage-multimodal-3 package: has a ProductId, but not in the map.
+        const discovery = new FakeDiscovery([{ name: "mm3-ep", productId: "prod-internal-mm3" }]);
+        await expect(resolver(discovery).resolve("voyage-multimodal-3")).rejects.toBeInstanceOf(
+            SageMakerResolutionError,
+        );
     });
 
-    test("ambiguous with no disambiguator throws", async () => {
-        const discovery = new FakeDiscovery([
-            { name: "ep-a", arns: [arn("voyage-3")] },
-            { name: "ep-b", arns: [arn("voyage-3")] },
-        ]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        await expect(resolver.resolve("voyage-3")).rejects.toBeInstanceOf(SageMakerResolutionError);
-        await expect(resolver.resolve("voyage-3")).rejects.toThrow(/Multiple SageMaker endpoints/);
-    });
-
-    test("T3 convention fallback via tag when no ARN candidate", async () => {
-        const discovery = new FakeDiscovery([{ name: "ep-a", arns: [], tag: "voyage-3" }]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("ep-a");
-    });
-
-    test("T3 convention fallback via endpoint name", async () => {
-        const discovery = new FakeDiscovery([{ name: "voyage-3", arns: [] }]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("voyage-3");
+    test("absent ProductId is skipped (self-built package)", async () => {
+        const discovery = new FakeDiscovery([{ name: "self-ep", productId: undefined }]);
+        await expect(resolver(discovery).resolve("voyage-4-lite")).rejects.toThrow(/No SageMaker endpoint found/);
     });
 
     test("no candidate throws resolution error", async () => {
-        const discovery = new FakeDiscovery([{ name: "ep-a", arns: [arn("other-model")] }]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        await expect(resolver.resolve("voyage-3")).rejects.toThrow(/No SageMaker endpoint found/);
+        const discovery = new FakeDiscovery([{ name: "ep-a", productId: "prod-rr25" }]);
+        await expect(resolver(discovery).resolve("voyage-4-lite")).rejects.toThrow(/No SageMaker endpoint found/);
     });
 
-    test("exact metadata match disambiguates versioned vs marketplace packages", async () => {
-        // Real live shape: a versioned package and a bare marketplace package coexist.
+    test("multiple endpoints for one model throw an ambiguity error", async () => {
         const discovery = new FakeDiscovery([
-            { name: "voyage-multimodal-3-5-dev", arns: [arn("voyage-multimodal-3-5-v1-28013f9c1fac3211bb9b6ead1b0")] },
-            { name: "multimodal-3", arns: [arn("voyage-multimodal-3")] },
+            { name: "ep-a", productId: "prod-lite" },
+            { name: "ep-b", productId: "prod-lite" },
         ]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        // Token-boundary alone would make voyage-multimodal-3 ambiguous; exact match resolves it.
-        expect(await resolver.resolve("voyage-multimodal-3")).toBe("multimodal-3");
-        expect(await resolver.resolve("voyage-multimodal-3.5")).toBe("voyage-multimodal-3-5-dev");
+        const r = resolver(discovery);
+        await expect(r.resolve("voyage-4-lite")).rejects.toBeInstanceOf(SageMakerResolutionError);
+        await expect(r.resolve("voyage-4-lite")).rejects.toThrow(/Multiple SageMaker endpoints/);
     });
 
-    test("exact match preferred over a looser token-boundary match", async () => {
-        const discovery = new FakeDiscovery([
-            { name: "exact-ep", arns: [arn("voyage-3-v2-deadbeefcafe")] },
-            { name: "loose-ep", arns: [arn("voyage-3-large-v1-abc123")] },
-        ]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("exact-ep");
-    });
-
-    test("tag-permission denial degrades to no-tag (keeps fallback path reachable)", async () => {
-        const discovery = new FakeDiscovery([{ name: "ep-a", arns: [arn("other-model")] }]);
-        discovery.getEndpointModelTag = async (): Promise<string | undefined> => {
-            throw new SageMakerAuthError("denied ListTags");
+    test("AccessDenied on the describe chain propagates as SageMakerAuthError", async () => {
+        const discovery = new FakeDiscovery([{ name: "ep-a", productId: "prod-lite" }]);
+        discovery.getEndpointProductId = async (): Promise<string | undefined> => {
+            throw new SageMakerAuthError("denied DescribeModelPackage");
         };
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        // Must surface a resolution error (not the auth error) so API fallback stays possible.
-        await expect(resolver.resolve("voyage-3")).rejects.toBeInstanceOf(SageMakerResolutionError);
+        // Auth errors propagate unchanged (the client decides on API fallback vs surfacing).
+        await expect(resolver(discovery).resolve("voyage-4-lite")).rejects.toBeInstanceOf(SageMakerAuthError);
     });
 
     test("result is cached; discovery runs once", async () => {
-        const discovery = new FakeDiscovery([{ name: "ep-a", arns: [arn("voyage-3")] }]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        expect(await resolver.resolve("voyage-3")).toBe("ep-a");
-        expect(await resolver.resolve("voyage-3")).toBe("ep-a");
+        const discovery = new FakeDiscovery([{ name: "ep-a", productId: "prod-lite" }]);
+        const r = resolver(discovery);
+        expect(await r.resolve("voyage-4-lite")).toBe("ep-a");
+        expect(await r.resolve("voyage-4-lite")).toBe("ep-a");
         expect(discovery.listCalls).toBe(1);
     });
 
     test("concurrent resolves are deduped", async () => {
-        const discovery = new FakeDiscovery([{ name: "ep-a", arns: [arn("voyage-3")] }]);
-        const resolver = new SageMakerEndpointResolver(config(), discovery);
-        const [a, b] = await Promise.all([resolver.resolve("voyage-3"), resolver.resolve("voyage-3")]);
+        const discovery = new FakeDiscovery([{ name: "ep-a", productId: "prod-lite" }]);
+        const r = resolver(discovery);
+        const [a, b] = await Promise.all([r.resolve("voyage-4-lite"), r.resolve("voyage-4-lite")]);
         expect(a).toBe("ep-a");
         expect(b).toBe("ep-a");
         expect(discovery.listCalls).toBe(1);

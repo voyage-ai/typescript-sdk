@@ -307,15 +307,23 @@ export VOYAGE_SAGEMAKER_ENDPOINT_MAP="voyage-3=my-ep-a,voyage-3-large=my-ep-b"
 For each call the model name is resolved to a SageMaker endpoint using, in order:
 
 1. **Explicit `endpointMap` override** — exact model-name match, no AWS calls.
-2. **Auto-discovery (default)** — the account's `InService` endpoints are inspected and matched against the
-   Voyage model-package ARN embedded in each endpoint's model.
-3. **Convention fallback** — an endpoint tagged `voyageai:model=<model>`, or whose name equals the normalized
-   model name.
+2. **Auto-discovery (default)** — the account's `InService` endpoints are inspected and each is identified by the
+   Marketplace **ProductId** on its model package
+   (`DescribeEndpoint` → `DescribeEndpointConfig` → `DescribeModel` → `DescribeModelPackage`, reading
+   `InferenceSpecification.Containers[0].ProductId`). That ProductId maps to a canonical Voyage model name. The
+   ProductId is stable across model **versions** — unlike the model-package ARN, which changes on every release —
+   so resolution does not break when a listing is updated.
 
-Resolutions are cached per client. If discovery is ambiguous, disambiguate with the `voyageai:model` tag or an
-explicit `endpointMap` entry. Discovery requires the `sagemaker:ListEndpoints`, `DescribeEndpoint`,
-`DescribeEndpointConfig`, `DescribeModel`, and `ListTags` permissions — grant them, or bypass discovery entirely
-with `endpointMap`.
+Endpoints whose ProductId is **absent** (self-built packages) or **unrecognized** (not a public Voyage
+listing — e.g. an internal/private listing) are skipped, never guessed; reach them with an explicit `endpointMap`
+entry. Resolutions are cached per client. If two endpoints serve the same model, resolution is ambiguous —
+disambiguate with an explicit `endpointMap` entry.
+
+Auto-discovery requires these IAM permissions (in addition to `sagemaker:InvokeEndpoint`):
+`sagemaker:ListEndpoints`, `sagemaker:DescribeEndpoint`, `sagemaker:DescribeEndpointConfig`,
+`sagemaker:DescribeModel`, and `sagemaker:DescribeModelPackage`. To limit permissions to `InvokeEndpoint` only,
+bypass discovery entirely by supplying an explicit `endpointMap` for every model. If a discovery call is denied,
+the SDK raises an auth error naming the missing permission and pointing at the `endpointMap` escape hatch.
 
 #### Routing and fallback
 

@@ -26,7 +26,20 @@ function jsonResponse(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
+// Test product map: ProductId -> model. The runtime is constructed with this injected
+// (the real PRODUCT_MAP is populated from the canonical listing config separately).
+const PRODUCT_MAP: Readonly<Record<string, string>> = {
+    "prod-voyage-3": "voyage-3",
+    "prod-mm3": "voyage-multimodal-3",
+    "prod-lite": "voyage-4-lite",
+    "prod-rerank-2": "rerank-2",
+};
+const PRODUCT_ID_BY_MODEL: Readonly<Record<string, string>> = Object.fromEntries(
+    Object.entries(PRODUCT_MAP).map(([id, model]) => [model, id]),
+);
+
 function depsResolving(endpointName: string, model: string): AwsDeps {
+    const productId = PRODUCT_ID_BY_MODEL[model];
     return {
         createSigner: () => ({
             async sign({ headers }) {
@@ -37,11 +50,8 @@ function depsResolving(endpointName: string, model: string): AwsDeps {
             async listInServiceEndpointNames() {
                 return [endpointName];
             },
-            async getEndpointModelPackageArns() {
-                return [`arn:aws:sagemaker:us-east-1:1:model-package/${model}`];
-            },
-            async getEndpointModelTag() {
-                return model;
+            async getEndpointProductId() {
+                return productId;
             },
         }),
     };
@@ -58,10 +68,7 @@ function depsNoCandidate(): AwsDeps {
             async listInServiceEndpointNames() {
                 return [];
             },
-            async getEndpointModelPackageArns() {
-                return [];
-            },
-            async getEndpointModelTag() {
+            async getEndpointProductId() {
                 return undefined;
             },
         }),
@@ -112,6 +119,7 @@ describe("SageMaker routing", () => {
             new SageMakerRuntime(config, {
                 hasApiKey: true,
                 depsLoader: async () => depsResolving("ep-a", "voyage-3"),
+                productMap: PRODUCT_MAP,
             }),
         );
 
@@ -131,7 +139,11 @@ describe("SageMaker routing", () => {
         });
         injectRuntime(
             client,
-            new SageMakerRuntime(config, { hasApiKey: true, depsLoader: async () => depsNoCandidate() }),
+            new SageMakerRuntime(config, {
+                hasApiKey: true,
+                depsLoader: async () => depsNoCandidate(),
+                productMap: PRODUCT_MAP,
+            }),
         );
 
         await client.embed({ model: "voyage-3", input: "hi" });
@@ -151,7 +163,11 @@ describe("SageMaker routing", () => {
         });
         injectRuntime(
             client,
-            new SageMakerRuntime(config, { hasApiKey: false, depsLoader: async () => depsNoCandidate() }),
+            new SageMakerRuntime(config, {
+                hasApiKey: false,
+                depsLoader: async () => depsNoCandidate(),
+                productMap: PRODUCT_MAP,
+            }),
         );
 
         await expect(client.embed({ model: "voyage-3", input: "hi" })).rejects.toThrow(/No SageMaker endpoint/);
@@ -171,6 +187,7 @@ describe("SageMaker routing", () => {
             new SageMakerRuntime(config, {
                 hasApiKey: true,
                 depsLoader: async () => depsResolving("mm-ep", "voyage-multimodal-3"),
+                productMap: PRODUCT_MAP,
             }),
         );
 
@@ -204,6 +221,7 @@ describe("SageMaker routing", () => {
             new SageMakerRuntime(config, {
                 hasApiKey: true,
                 depsLoader: async () => depsResolving("mm-ep", "voyage-multimodal-3"),
+                productMap: PRODUCT_MAP,
             }),
         );
 
@@ -239,6 +257,7 @@ describe("SageMaker routing", () => {
             new SageMakerRuntime(config, {
                 hasApiKey: true,
                 depsLoader: async () => depsResolving("lite-ep", "voyage-4-lite"),
+                productMap: PRODUCT_MAP,
             }),
         );
 
@@ -264,6 +283,7 @@ describe("SageMaker routing", () => {
             new SageMakerRuntime(config, {
                 hasApiKey: true,
                 depsLoader: async () => depsResolving("rr-ep", "rerank-2"),
+                productMap: PRODUCT_MAP,
             }),
         );
 

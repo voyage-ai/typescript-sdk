@@ -96,7 +96,7 @@ export async function loadAwsDeps(): Promise<AwsDeps> {
         DescribeEndpointCommand,
         DescribeEndpointConfigCommand,
         DescribeModelCommand,
-        ListTagsCommand,
+        DescribeModelPackageCommand,
     } = sagemakerMod;
 
     const createSigner = (config: SageMakerConfig): SageMakerSigner => {
@@ -148,8 +148,9 @@ export async function loadAwsDeps(): Promise<AwsDeps> {
                 if (isAccessDenied(error)) {
                     throw new SageMakerAuthError(
                         `AWS credentials lack permission for SageMaker endpoint discovery (${action}). ` +
-                            "Either grant sagemaker:ListEndpoints/ListTags/DescribeEndpoint/DescribeEndpointConfig/" +
-                            "DescribeModel, or bypass discovery with endpointMap.",
+                            "Grant sagemaker:ListEndpoints, DescribeEndpoint, DescribeEndpointConfig, DescribeModel, " +
+                            "and DescribeModelPackage (in addition to sagemaker:InvokeEndpoint), or bypass discovery " +
+                            "entirely by providing an explicit endpointMap.",
                     );
                 }
                 throw error;
@@ -176,60 +177,42 @@ export async function loadAwsDeps(): Promise<AwsDeps> {
                 });
             },
 
-            async getEndpointModelPackageArns(endpointName: string): Promise<string[]> {
-                return guard("sagemaker:DescribeEndpoint", async () => {
-                    const endpoint = await client.send(new DescribeEndpointCommand({ EndpointName: endpointName }));
-                    const configName = endpoint.EndpointConfigName;
-                    if (!configName) {
-                        return [];
-                    }
-                    const endpointConfig = await client.send(
-                        new DescribeEndpointConfigCommand({ EndpointConfigName: configName }),
-                    );
-                    const modelNames: string[] = [];
-                    for (const variant of endpointConfig.ProductionVariants ?? []) {
-                        if (variant.ModelName) {
-                            modelNames.push(variant.ModelName);
-                        }
-                    }
-                    const arns: string[] = [];
-                    for (const modelName of modelNames) {
-                        const model = await client.send(new DescribeModelCommand({ ModelName: modelName }));
-                        const primary = model.PrimaryContainer?.ModelPackageName;
-                        if (primary) {
-                            arns.push(primary);
-                        }
-                        for (const container of model.Containers ?? []) {
-                            if (container.ModelPackageName) {
-                                arns.push(container.ModelPackageName);
-                            }
-                        }
-                    }
-                    return arns;
-                });
-            },
-
-            async getEndpointModelTag(endpointName: string): Promise<string | undefined> {
-                return guard("sagemaker:ListTags", async () => {
-                    const endpoint = await client.send(new DescribeEndpointCommand({ EndpointName: endpointName }));
-                    const arn = endpoint.EndpointArn;
-                    if (!arn) {
-                        return undefined;
-                    }
-                    let nextToken: string | undefined;
-                    do {
-                        const response = await client.send(
-                            new ListTagsCommand({ ResourceArn: arn, NextToken: nextToken }),
-                        );
-                        for (const tag of response.Tags ?? []) {
-                            if (tag.Key === "voyageai:model") {
-                                return tag.Value;
-                            }
-                        }
-                        nextToken = response.NextToken;
-                    } while (nextToken);
+            async getEndpointProductId(endpointName: string): Promise<string | undefined> {
+                const endpoint = (await guard("sagemaker:DescribeEndpoint", () =>
+                    client.send(new DescribeEndpointCommand({ EndpointName: endpointName })),
+                )) as { EndpointConfigName?: string };
+                const configName = endpoint.EndpointConfigName;
+                if (!configName) {
                     return undefined;
-                });
+                }
+                const endpointConfig = (await guard("sagemaker:DescribeEndpointConfig", () =>
+                    client.send(new DescribeEndpointConfigCommand({ EndpointConfigName: configName })),
+                )) as { ProductionVariants?: Array<{ ModelName?: string }> };
+                // A single endpoint serves one model; take the first production variant.
+                const modelName = endpointConfig.ProductionVariants?.[0]?.ModelName;
+                if (!modelName) {
+                    return undefined;
+                }
+                const model = (await guard("sagemaker:DescribeModel", () =>
+                    client.send(new DescribeModelCommand({ ModelName: modelName })),
+                )) as {
+                    PrimaryContainer?: { ModelPackageName?: string };
+                    Containers?: Array<{ ModelPackageName?: string }>;
+                };
+                // Marketplace deploys populate PrimaryContainer; console-created ones populate
+                // Containers[0]. Check both — reading only PrimaryContainer misses the latter.
+                const container = model.PrimaryContainer ?? model.Containers?.[0];
+                const packageName = container?.ModelPackageName;
+                if (!packageName) {
+                    // Not backed by a model package (self-built model) — not a Marketplace listing.
+                    return undefined;
+                }
+                const pkg = (await guard("sagemaker:DescribeModelPackage", () =>
+                    client.send(new DescribeModelPackageCommand({ ModelPackageName: packageName })),
+                )) as { InferenceSpecification?: { Containers?: Array<{ ProductId?: string }> } };
+                // A missing ProductId means the package is not a Marketplace product (e.g. a
+                // self-built package); treat it as unidentifiable rather than guessing.
+                return pkg.InferenceSpecification?.Containers?.[0]?.ProductId ?? undefined;
             },
         };
     };

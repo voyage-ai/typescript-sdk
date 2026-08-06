@@ -16,6 +16,7 @@ export {
     sagemakerConfigFromEnv,
 } from "./config.js";
 export { SageMakerAuthError, SageMakerResolutionError } from "./errors.js";
+export { PRODUCT_MAP } from "./productMap.js";
 export type { SageMakerDiscovery } from "./resolver.js";
-export { matchesAtTokenBoundary, normalizeName, SageMakerEndpointResolver } from "./resolver.js";
+export { normalizeName, SageMakerEndpointResolver } from "./resolver.js";
 export { SageMakerRuntime } from "./runtime.js";

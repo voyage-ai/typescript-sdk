@@ -15,6 +15,7 @@ import { SDK_VERSION } from "../version.js";
 import { type AwsDeps, loadAwsDeps, type SageMakerSigner } from "./awsDeps.js";
 import type { SageMakerConfig } from "./config.js";
 import { mapSageMakerError } from "./errors.js";
+import { PRODUCT_MAP } from "./productMap.js";
 import { SageMakerEndpointResolver } from "./resolver.js";
 
 /** Result of a SageMaker invocation: the parsed JSON body and the raw HTTP response. */
@@ -42,15 +43,24 @@ export class SageMakerRuntime {
     public readonly hasApiKey: boolean;
 
     private readonly depsLoader: () => Promise<AwsDeps>;
+    private readonly productMap: Readonly<Record<string, string>>;
     private depsPromise: Promise<AwsDeps> | undefined;
     private signer: SageMakerSigner | undefined;
     private resolver: SageMakerEndpointResolver | undefined;
     private readonly warnedModels: Set<string> = new Set();
 
-    constructor(config: SageMakerConfig, opts: { hasApiKey: boolean; depsLoader?: () => Promise<AwsDeps> }) {
+    constructor(
+        config: SageMakerConfig,
+        opts: {
+            hasApiKey: boolean;
+            depsLoader?: () => Promise<AwsDeps>;
+            productMap?: Readonly<Record<string, string>>;
+        },
+    ) {
         this.config = config;
         this.hasApiKey = opts.hasApiKey;
         this.depsLoader = opts.depsLoader ?? loadAwsDeps;
+        this.productMap = opts.productMap ?? PRODUCT_MAP;
     }
 
     private async deps(): Promise<AwsDeps> {
@@ -64,7 +74,11 @@ export class SageMakerRuntime {
     public async resolveEndpoint(model: string): Promise<string> {
         if (this.resolver === undefined) {
             const deps = await this.deps();
-            this.resolver = new SageMakerEndpointResolver(this.config, deps.createDiscovery(this.config));
+            this.resolver = new SageMakerEndpointResolver(
+                this.config,
+                deps.createDiscovery(this.config),
+                this.productMap,
+            );
         }
         return this.resolver.resolve(model);
     }

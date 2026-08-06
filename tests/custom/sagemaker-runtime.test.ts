@@ -27,10 +27,7 @@ function fakeDeps(): AwsDeps {
             async listInServiceEndpointNames() {
                 return ["ep-a"];
             },
-            async getEndpointModelPackageArns() {
-                return [];
-            },
-            async getEndpointModelTag() {
+            async getEndpointProductId() {
                 return undefined;
             },
         }),
