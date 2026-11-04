@@ -1,8 +1,8 @@
 /**
- * Tests for local model support (voyage-4-nano via @huggingface/transformers).
+ * Tests for local model support (voyage-4-nano via node-llama-cpp).
  *
  * These tests validate the model registry, validation logic, and ExtendedClient routing.
- * The actual ONNX inference is mocked to avoid downloading models in CI.
+ * The actual inference is mocked to avoid downloading models in CI.
  */
 
 import {
@@ -26,7 +26,7 @@ describe("Local Model Registry", () => {
 
     test("getModelConfig returns config for voyage-4-nano", () => {
         const config = getModelConfig("voyage-4-nano");
-        expect(config.onnxModelId).toBe("onnx-community/voyage-4-nano-ONNX");
+        expect(config.ggufModelUri).toBe("hf:MongoDB/voyage-4-nano-GGUF/voyage-4-nano-Q8_0.gguf");
         expect(config.defaultDimension).toBe(2048);
         expect(config.supportedDimensions).toContain(512);
     });
