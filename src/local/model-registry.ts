@@ -6,8 +6,8 @@
 import type * as VoyageAI from "../api/index.js";
 
 export interface LocalModelConfig {
-    /** ONNX model ID on HuggingFace Hub */
-    onnxModelId: string;
+    /** GGUF model file on HuggingFace Hub, as a node-llama-cpp model URI */
+    ggufModelUri: string;
     /** Default embedding dimension */
     defaultDimension: number;
     /** Supported Matryoshka dimensions */
@@ -19,14 +19,15 @@ export interface LocalModelConfig {
     /**
      * Instruction prompts prepended per input type. Copied from the official model's
      * config_sentence_transformers.json, which the Python SDK reads at load time;
-     * the ONNX conversion doesn't ship it.
+     * the GGUF file doesn't include it.
      */
     prompts: Partial<Record<VoyageAI.EmbedRequestInputType, string>>;
 }
 
 export const SUPPORTED_MODELS: Record<string, LocalModelConfig> = {
     "voyage-4-nano": {
-        onnxModelId: "onnx-community/voyage-4-nano-ONNX",
+        // Official GGUF conversion; Q8_0 stays within 6e-4 (1 - cosine) of the original model.
+        ggufModelUri: "hf:MongoDB/voyage-4-nano-GGUF/voyage-4-nano-Q8_0.gguf",
         defaultDimension: 2048,
         supportedDimensions: [2048, 1024, 512, 256],
         supportedPrecisions: ["float32", "int8", "uint8", "binary", "ubinary"],
