@@ -3,6 +3,9 @@
  * Loads tokenizers from HuggingFace Hub via @huggingface/transformers.
  */
 
+/** HuggingFace Hub organization hosting the Voyage tokenizers. */
+const TOKENIZER_HF_ORG = "MongoDB";
+
 const tokenizerCache = new Map<string, any>();
 
 let transformersModule: any = null;
@@ -26,7 +29,7 @@ export async function getTokenizerForModel(model: string): Promise<any> {
     let tokenizer = tokenizerCache.get(model);
     if (!tokenizer) {
         const { AutoTokenizer } = await getTransformers();
-        tokenizer = await AutoTokenizer.from_pretrained(`voyageai/${model}`);
+        tokenizer = await AutoTokenizer.from_pretrained(`${TOKENIZER_HF_ORG}/${model}`);
         tokenizerCache.set(model, tokenizer);
     }
     return tokenizer;
