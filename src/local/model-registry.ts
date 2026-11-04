@@ -3,6 +3,8 @@
  * Mirrors Python SDK's voyageai/local/model_registry.py
  */
 
+import type * as VoyageAI from "../api/index.js";
+
 export interface LocalModelConfig {
     /** ONNX model ID on HuggingFace Hub */
     onnxModelId: string;
@@ -14,6 +16,12 @@ export interface LocalModelConfig {
     supportedPrecisions: string[];
     /** Maximum token context length */
     maxTokens: number;
+    /**
+     * Instruction prompts prepended per input type. Copied from the official model's
+     * config_sentence_transformers.json, which the Python SDK reads at load time;
+     * the ONNX conversion doesn't ship it.
+     */
+    prompts: Partial<Record<VoyageAI.EmbedRequestInputType, string>>;
 }
 
 export const SUPPORTED_MODELS: Record<string, LocalModelConfig> = {
@@ -23,6 +31,10 @@ export const SUPPORTED_MODELS: Record<string, LocalModelConfig> = {
         supportedDimensions: [2048, 1024, 512, 256],
         supportedPrecisions: ["float32", "int8", "uint8", "binary", "ubinary"],
         maxTokens: 32768,
+        prompts: {
+            query: "Represent the query for retrieving supporting documents: ",
+            document: "Represent the document for retrieval: ",
+        },
     },
 };
 
@@ -39,6 +51,14 @@ export function getModelConfig(model: string): LocalModelConfig {
         );
     }
     return config;
+}
+
+/** Prompt to prepend for the given input type, or "" when none applies (no inputType). */
+export function getPromptForInputType(config: LocalModelConfig, inputType?: VoyageAI.EmbedRequestInputType): string {
+    if (inputType == null) {
+        return "";
+    }
+    return config.prompts[inputType] ?? "";
 }
 
 export function validateDimension(config: LocalModelConfig, dimension?: number): number {

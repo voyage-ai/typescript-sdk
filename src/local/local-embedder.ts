@@ -4,7 +4,7 @@
  */
 
 import type * as VoyageAI from "../api/index.js";
-import { getModelConfig, validateDimension, validatePrecision } from "./model-registry.js";
+import { getModelConfig, getPromptForInputType, validateDimension, validatePrecision } from "./model-registry.js";
 import { getTransformers, getTokenizerForModel } from "./tokenizer.js";
 
 // Cached pipelines (persist across calls)
@@ -32,7 +32,10 @@ export async function localEmbed(request: VoyageAI.EmbedRequest): Promise<Voyage
     validatePrecision(config, request.outputDtype);
 
     const extractor = await getPipeline(config.onnxModelId);
-    const inputs = Array.isArray(request.input) ? request.input : [request.input];
+    const prompt = getPromptForInputType(config, request.inputType);
+    const rawInputs = Array.isArray(request.input) ? request.input : [request.input];
+    // The model is trained with instruction prompts; token counts include them, as in the Python SDK.
+    const inputs = rawInputs.map((text) => prompt + text);
 
     const embeddings: number[][] = [];
     for (const text of inputs) {
