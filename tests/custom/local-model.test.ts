@@ -5,7 +5,14 @@
  * The actual ONNX inference is mocked to avoid downloading models in CI.
  */
 
-import { isLocalModel, getModelConfig, validateDimension, validatePrecision, SUPPORTED_MODELS } from "../../src/local/model-registry";
+import {
+    isLocalModel,
+    getModelConfig,
+    getPromptForInputType,
+    validateDimension,
+    validatePrecision,
+    SUPPORTED_MODELS,
+} from "../../src/local/model-registry";
 
 describe("Local Model Registry", () => {
     test("isLocalModel returns true for voyage-4-nano", () => {
@@ -62,5 +69,18 @@ describe("Precision Validation", () => {
 
     test("rejects unsupported precisions", () => {
         expect(() => validatePrecision(config, "float16")).toThrow("Invalid outputDtype");
+    });
+});
+
+describe("Input type prompts", () => {
+    const config = SUPPORTED_MODELS["voyage-4-nano"];
+
+    test("no inputType means no prompt", () => {
+        expect(getPromptForInputType(config, undefined)).toBe("");
+    });
+
+    test("query and document use the official voyage-4-nano prompts", () => {
+        expect(getPromptForInputType(config, "query")).toBe("Represent the query for retrieving supporting documents: ");
+        expect(getPromptForInputType(config, "document")).toBe("Represent the document for retrieval: ");
     });
 });
