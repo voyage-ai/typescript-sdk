@@ -49,11 +49,20 @@ describe("embed() edge cases", () => {
         expect(result.data![0].embedding!.length).toBeGreaterThan(0);
     });
 
-    test("max batch size (128 inputs)", async () => {
-        const inputs = Array.from({ length: 128 }, (_, i) => `text ${i}`);
+    // https://docs.voyageai.com/reference/embeddings-api: the list can hold at most 1,000 texts.
+    test("max batch size (1000 inputs)", async () => {
+        const inputs = Array.from({ length: 1000 }, (_, i) => `text ${i}`);
         const result = await client.embed({ input: inputs, model: "voyage-3-large" });
-        expect(result.data?.length).toBe(128);
-    }, 30000);
+        expect(result.data?.length).toBe(1000);
+    }, 60000);
+
+    test("batch over the limit (1001 inputs) throws VoyageAIError", async () => {
+        const inputs = Array.from({ length: 1001 }, (_, i) => `text ${i}`);
+        const error = await client.embed({ input: inputs, model: "voyage-3-large" }).catch((e) => e);
+        expect(error).toBeInstanceOf(VoyageAIError);
+        expect(error.statusCode).toBe(400);
+        expect(JSON.stringify(error.body)).toContain("batch size limit is 1000");
+    }, 60000);
 
     // --- Truncation ---
 
