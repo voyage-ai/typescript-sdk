@@ -62,13 +62,17 @@
     },
     "peerDependencies": {
         "@huggingface/transformers": "^3.8.0",
-        "onnxruntime-node": ">=1.17.0"
+        "onnxruntime-node": ">=1.17.0",
+        "node-llama-cpp": "^3.22.3"
     },
     "peerDependenciesMeta": {
         "@huggingface/transformers": {
             "optional": true
         },
         "onnxruntime-node": {
+            "optional": true
+        },
+        "node-llama-cpp": {
             "optional": true
         }
     },
@@ -81,7 +85,8 @@
         "@types/node": "^18.19.70",
         "typescript": "~5.7.2",
         "@biomejs/biome": "2.3.11",
-        "@vitest/coverage-v8": "^3.2.4"
+        "@vitest/coverage-v8": "^3.2.4",
+        "node-llama-cpp": "^3.22.3"
     },
     "browser": {
         "fs": false,

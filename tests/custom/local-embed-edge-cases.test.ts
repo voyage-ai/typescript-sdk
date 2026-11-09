@@ -1,22 +1,22 @@
 import { assertNormalized } from "./helpers";
 
-// Gracefully skip entire suite if @huggingface/transformers is not installed
-let transformersAvailable = false;
+// Gracefully skip entire suite if node-llama-cpp is not installed
+let nodeLlamaCppAvailable = false;
 try {
-    require.resolve("@huggingface/transformers");
-    transformersAvailable = true;
+    require.resolve("node-llama-cpp");
+    nodeLlamaCppAvailable = true;
 } catch {}
 
-const describeIfTransformers = transformersAvailable ? describe : describe.skip;
+const describeIfNodeLlamaCpp = nodeLlamaCppAvailable ? describe : describe.skip;
 
-describeIfTransformers("voyage-4-nano local model edge cases", () => {
-    // Lazy import to avoid crash when transformers not installed
+describeIfNodeLlamaCpp("voyage-4-nano local model edge cases", () => {
+    // Lazy import to avoid crash when node-llama-cpp not installed
     let VoyageAIClient: any;
 
     beforeAll(async () => {
         const mod = await import("../../src/extended/ExtendedClient");
         VoyageAIClient = mod.VoyageAIClient;
-        // Warm up once so the model download (~1.4 GB on a cold cache) doesn't count
+        // Warm up once so the GGUF download (~374 MB on a cold cache) doesn't count
         // against the 60 s per-test timeouts below.
         await new VoyageAIClient({ apiKey: "bogus-key-not-used" }).embed({ input: "warm-up", model: "voyage-4-nano" });
     }, 600000);
@@ -113,7 +113,7 @@ describeIfTransformers("voyage-4-nano local model edge cases", () => {
 
     // --- Silently ignores unsupported params ---
 
-    test("silently ignores truncation parameter", async () => {
+    test("truncation: false is accepted for inputs within the token limit", async () => {
         const client = makeClient();
         const result = await client.embed({
             input: "test",
@@ -165,7 +165,7 @@ describeIfTransformers("voyage-4-nano local model edge cases", () => {
 
     // --- Empty string ---
 
-    test("empty string throws Error (ONNX cannot process zero tokens)", async () => {
+    test("empty string throws Error", async () => {
         const client = makeClient();
         await expect(
             client.embed({ input: "", model: "voyage-4-nano" })
@@ -199,7 +199,8 @@ describeIfTransformers("voyage-4-nano local model edge cases", () => {
     // --- Input type prompts ---
 
     // First values of the official MongoDB/voyage-4-nano embeddings (sentence-transformers, fp32)
-    // for "Which planet is known as the Red Planet?", with the model's own prompts.
+    // for "Which planet is known as the Red Planet?", with the model's own prompts. The Q8_0 GGUF
+    // stays within ~6e-4 of these; a missing or wrong prompt changes them by 5e-3 or more.
     const REFERENCE_PREFIX = {
         none: [-0.006465, 0.000147, -0.012018, 0.016894, -0.017854, -0.013659],
         query: [-0.005226, 0.005268, -0.014303, 0.01575, -0.02629, -0.009411],
@@ -219,7 +220,7 @@ describeIfTransformers("voyage-4-nano local model edge cases", () => {
         });
         const prefix = result.data![0].embedding!.slice(0, REFERENCE_PREFIX[key].length);
         for (const [i, v] of prefix.entries()) {
-            expect(v).toBeCloseTo(REFERENCE_PREFIX[key][i], 4);
+            expect(Math.abs(v - REFERENCE_PREFIX[key][i])).toBeLessThan(2e-3);
         }
     }, 60000);
 
