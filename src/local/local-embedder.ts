@@ -3,9 +3,9 @@
  * Runs voyage-4-nano entirely locally - no API calls after initial model download.
  */
 
-import type * as VoyageAI from "../api";
-import { getModelConfig, validateDimension, validatePrecision } from "./model-registry";
-import { getTransformers, getTokenizerForModel } from "./tokenizer";
+import type * as VoyageAI from "../api/index.js";
+import { getModelConfig, validateDimension, validatePrecision } from "./model-registry.js";
+import { getTransformers, getTokenizerForModel } from "./tokenizer.js";
 
 // Cached pipelines (persist across calls)
 const pipelineCache = new Map<string, any>();

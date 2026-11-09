@@ -1,3 +1,4 @@
+export * from "./ContextualizedEmbedRequestInputs.js";
 export * from "./ContextualizedEmbedRequestInputType.js";
 export * from "./ContextualizedEmbedRequestOutputDtype.js";
 export * from "./ContextualizedEmbedResponse.js";

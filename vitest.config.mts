@@ -20,6 +20,7 @@ export default defineConfig({
                     environment: "node",
                     root: "./tests/custom",
                     include: ["**/*.test.{js,ts,jsx,tsx}"],
+                    setupFiles: ["../mock-server/setup.ts"],
                 },
             },
             {

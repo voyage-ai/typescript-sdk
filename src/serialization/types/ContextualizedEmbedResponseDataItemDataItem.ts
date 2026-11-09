@@ -11,6 +11,7 @@ export const ContextualizedEmbedResponseDataItemDataItem: core.serialization.Obj
     object: core.serialization.string().optional(),
     embedding: core.serialization.list(core.serialization.number()).optional(),
     index: core.serialization.number().optional(),
+    text: core.serialization.string().optional(),
 });
 
 export declare namespace ContextualizedEmbedResponseDataItemDataItem {
@@ -18,5 +19,6 @@ export declare namespace ContextualizedEmbedResponseDataItemDataItem {
         object?: string | null;
         embedding?: number[] | null;
         index?: number | null;
+        text?: string | null;
     }
 }

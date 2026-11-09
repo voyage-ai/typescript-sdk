@@ -9,5 +9,7 @@ export interface ContextualizedEmbedResponse {
     data?: VoyageAI.ContextualizedEmbedResponseDataItem[];
     /** Name of the model used. */
     model?: string;
+    /** Version of the chunker used (e.g., "1.0.0"). Present when auto-chunking is used. */
+    chunkerVersion?: string;
     usage?: VoyageAI.ContextualizedEmbedResponseUsage;
 }

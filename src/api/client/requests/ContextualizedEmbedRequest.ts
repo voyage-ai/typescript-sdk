@@ -10,9 +10,9 @@ import type * as VoyageAI from "../../index.js";
  *     }
  */
 export interface ContextualizedEmbedRequest {
-    /** A list of documents, where each document is represented as a list of text chunks (strings). <ul> <li> The maximum number of inputs (documents) is 1,000. </li> <li> The total number of chunks across all documents cannot exceed 16,000. </li> <li> The total number of tokens across all inputs cannot exceed 120,000. </li> </ul> */
-    inputs: string[][];
-    /** Name of the model. Currently, the recommended model is `voyage-context-3`, which has a context  length of 32,000 tokens and supports output dimensions of 256, 512, 1024, and 2048. */
+    /** A list of documents, where each document is represented as a list of text chunks (strings). When `enable_auto_chunking` is `true` or `input_type` is `query`, inputs can also be a flat list of strings (one string per document or query). <ul> <li> The maximum number of inputs (documents) is 1,000. </li> <li> The total number of chunks across all documents cannot exceed 16,000. </li> <li> The total number of tokens across all inputs cannot exceed 120,000. </li> </ul> */
+    inputs: VoyageAI.ContextualizedEmbedRequestInputs;
+    /** Name of the model. Recommended options: `voyage-context-3`, `voyage-context-4`. Both have a context length of 32,000 tokens and support output dimensions of 256, 512, 1024, and 2048. */
     model: string;
     /** Type of the input text. Defaults to `null`. Other options: `query`, `document`. <ul> <li> When `input_type` is `null`, the embedding model directly converts your input data into  numerical vectors. </li> <li> For retrieval/search purposes, we recommend specifying whether your inputs are intended  as queries or documents by setting `input_type` to `query` or `document`, respectively. </li> <li> When specified, Voyage prepends a specific prompt to your input before vectorizing it,  helping the model create more effective vectors tailored for retrieval/search tasks. </li> </ul> */
     inputType?: VoyageAI.ContextualizedEmbedRequestInputType;
@@ -20,4 +20,10 @@ export interface ContextualizedEmbedRequest {
     outputDimension?: number;
     /** The data type for the embeddings to be returned. Defaults to `float`. Other options: `int8`, `uint8`, `binary`, `ubinary`. */
     outputDtype?: VoyageAI.ContextualizedEmbedRequestOutputDtype;
+    /** When `true`, the server performs chunking on the input documents. Requires `input_type` to be `document`. Inputs must be a flat list of strings (one string per document). Defaults to `false`. */
+    enableAutoChunking?: boolean;
+    /** Target chunk size in tokens. Only valid when `enable_auto_chunking` is `true`. Must not exceed 32,000 tokens. Server default is 512. */
+    chunkSize?: number;
+    /** Overlap in tokens between consecutive chunks. Only valid when `enable_auto_chunking` is `true`. Must be strictly less than `chunk_size`. Defaults to 0. */
+    chunkOverlap?: number;
 }
