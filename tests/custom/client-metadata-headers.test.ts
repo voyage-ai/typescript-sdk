@@ -199,4 +199,53 @@ describe("client metadata headers on the wire", () => {
         // Other metadata headers should still be present
         expect(capturedHeaders!.get("x-voyageai-lang")).toBe("typescript");
     });
+
+    it("trims entries and dedupes on the trimmed name/version", async () => {
+        const embedResponse = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+            model: "voyage-3-large",
+            usage: { total_tokens: 5 },
+        };
+        const { fetch, getCapturedHeaders } = createCapturingFetch(embedResponse);
+
+        const client = new VoyageAIClient({
+            apiKey: "test-key",
+            environment: "https://mock.test",
+            maxRetries: 0,
+            fetch,
+        });
+
+        client.appendClientMetadata({ name: " mem0 ", version: "1.2.3 " });
+        client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+        await client.embed({ input: "test", model: "voyage-3-large" });
+
+        expect(getCapturedHeaders()!.get("x-voyageai-wrapper")).toBe("mem0/1.2.3");
+    });
+
+    it("throws on invalid wrapper metadata and leaves the header unchanged", async () => {
+        const embedResponse = {
+            object: "list",
+            data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+            model: "voyage-3-large",
+            usage: { total_tokens: 5 },
+        };
+        const { fetch, getCapturedHeaders } = createCapturingFetch(embedResponse);
+
+        const client = new VoyageAIClient({
+            apiKey: "test-key",
+            environment: "https://mock.test",
+            maxRetries: 0,
+            fetch,
+        });
+
+        client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+        expect(() => client.appendClientMetadata({ name: "a|b", version: "1.0" })).toThrow(/invalid characters/);
+        expect(() => client.appendClientMetadata({ name: "", version: "1.0" })).toThrow(
+            "Wrapper name must be a non-empty string.",
+        );
+        await client.embed({ input: "test", model: "voyage-3-large" });
+
+        expect(getCapturedHeaders()!.get("x-voyageai-wrapper")).toBe("mem0/1.2.3");
+    });
 });

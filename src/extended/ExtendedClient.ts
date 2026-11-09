@@ -10,7 +10,12 @@ import { mergeHeaders } from "../core/headers.js";
 import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
 import { tokenizeTexts } from "../local/tokenizer.js";
-import { buildMetadataHeaders, type ClientMetadataEntry, formatWrapperHeader } from "./client-metadata.js";
+import {
+    buildMetadataHeaders,
+    type ClientMetadataEntry,
+    formatWrapperHeader,
+    validateClientMetadataEntry,
+} from "./client-metadata.js";
 
 export type ChunkFn = (text: string) => string[];
 
@@ -128,15 +133,18 @@ export class VoyageAIClient extends GeneratedClient {
 
     /**
      * Register a wrapper library's metadata so it is included in subsequent
-     * requests via the `X-VoyageAI-Wrapper` header. Duplicate entries (same
-     * name + version) are silently ignored.
+     * requests via the `X-VoyageAI-Wrapper` header. Name and version are trimmed;
+     * duplicate entries (same trimmed name + version) are silently ignored.
      *
      * @param entry - The wrapper name and version to register.
+     * @throws Error if the name or version is not a string, is empty after trimming,
+     *     contains anything but printable ASCII, or contains the reserved `|` / `/` delimiters.
      *
      * @example
      *     client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
      */
-    public appendClientMetadata(entry: ClientMetadataEntry): void {
+    public appendClientMetadata(rawEntry: ClientMetadataEntry): void {
+        const entry = validateClientMetadataEntry(rawEntry);
         const exists = this._wrappers.some((w) => w.name === entry.name && w.version === entry.version);
         if (!exists) {
             this._wrappers.push(entry);

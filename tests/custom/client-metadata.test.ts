@@ -4,6 +4,7 @@ import {
     detectOS,
     buildMetadataHeaders,
     formatWrapperHeader,
+    validateClientMetadataEntry,
     type ClientMetadataEntry,
 } from "../../src/extended/client-metadata";
 
@@ -88,5 +89,119 @@ describe("formatWrapperHeader", () => {
             { name: "llamaindex", version: "0.10.5" },
         ];
         expect(formatWrapperHeader(wrappers)).toBe("mem0/1.2.3|llamaindex/0.10.5");
+    });
+});
+
+describe("detectOS mapping", () => {
+    it.each([
+        ["darwin", "Darwin"],
+        ["linux", "Linux"],
+        ["win32", "Windows"],
+        ["freebsd", "FreeBSD"],
+        ["openbsd", "OpenBSD"],
+        ["netbsd", "NetBSD"],
+        ["sunos", "SunOS"],
+        ["aix", "AIX"],
+        ["android", "Android"],
+        ["haiku", "haiku"],
+    ])("maps %s to %s", async (platform, expected) => {
+        const osModule = await import("os");
+        const platformMock = vi.mocked(osModule.platform);
+        platformMock.mockReturnValue(platform as NodeJS.Platform);
+        try {
+            expect(detectOS()).toBe(expected);
+        } finally {
+            platformMock.mockRestore();
+        }
+    });
+});
+
+describe("unknown fallbacks", () => {
+    it("reports unknown runtime and runtime version when no runtime is detected", () => {
+        const original = Object.getOwnPropertyDescriptor(process, "versions")!;
+        Object.defineProperty(process, "versions", { value: {}, configurable: true });
+        try {
+            expect(detectRuntime()).toEqual({ name: "unknown", version: "unknown" });
+            const headers = buildMetadataHeaders();
+            expect(headers["X-VoyageAI-Runtime"]).toBe("unknown");
+            expect(headers["X-VoyageAI-Runtime-Version"]).toBe("unknown");
+            expect(headers["User-Agent"]).toMatch(/^voyageai-typescript\/\S+ unknown\/unknown \S+$/);
+        } finally {
+            Object.defineProperty(process, "versions", original);
+        }
+    });
+
+    it("reports unknown package version when SDK_VERSION is empty", async () => {
+        vi.resetModules();
+        vi.doMock("../../src/version.js", () => ({ SDK_VERSION: "" }));
+        try {
+            const { buildMetadataHeaders: buildFresh } = await import("../../src/extended/client-metadata");
+            const headers = buildFresh();
+            expect(headers["X-VoyageAI-Package-Version"]).toBe("unknown");
+            expect(headers["User-Agent"]).toMatch(/^voyageai-typescript\/unknown /);
+        } finally {
+            vi.doUnmock("../../src/version.js");
+            vi.resetModules();
+        }
+    });
+});
+
+describe("User-Agent format", () => {
+    it("is voyageai-typescript/<Package-Version> <Runtime>/<Runtime-Version> <OS>", () => {
+        const headers = buildMetadataHeaders();
+        expect(headers["User-Agent"]).toBe(
+            `voyageai-typescript/${headers["X-VoyageAI-Package-Version"]} ` +
+                `${headers["X-VoyageAI-Runtime"]}/${headers["X-VoyageAI-Runtime-Version"]} ${headers["X-VoyageAI-OS"]}`,
+        );
+    });
+});
+
+describe("validateClientMetadataEntry", () => {
+    it("trims surrounding spaces from name and version", () => {
+        expect(validateClientMetadataEntry({ name: "  mem0  ", version: " 1.2.3" })).toEqual({
+            name: "mem0",
+            version: "1.2.3",
+        });
+    });
+
+    it.each([
+        ["number", 123, "number"],
+        ["undefined", undefined, "undefined"],
+        ["null", null, "object"],
+    ])("rejects a %s name", (_label, name, type) => {
+        expect(() => validateClientMetadataEntry({ name: name as unknown as string, version: "1.0" })).toThrow(
+            `Wrapper name must be a string, got ${type}.`,
+        );
+    });
+
+    it.each([[""], ["   "]])("rejects %j as empty", (value) => {
+        expect(() => validateClientMetadataEntry({ name: value, version: "1.0" })).toThrow(
+            "Wrapper name must be a non-empty string.",
+        );
+        expect(() => validateClientMetadataEntry({ name: "mem0", version: value })).toThrow(
+            "Wrapper version must be a non-empty string.",
+        );
+    });
+
+    it.each([
+        ["a|b"],
+        ["a/b"],
+        ["a\nb"],
+        ["a\n"],
+        ["\x7f"],
+        ["a\x00b"],
+        ["a\x1f"],
+        ["\tmem0"],
+        [" a\t"],
+        ["mem0\u00e9"],
+        ["a\u00a0b"],
+        ["a\x85"],
+    ])("rejects %j as invalid characters", (value) => {
+        expect(() => validateClientMetadataEntry({ name: value, version: "1.0" })).toThrow(
+            /^Wrapper name .* contains invalid characters \(only printable ASCII is allowed, and '\|' \/ '\/' are reserved\)\.$/,
+        );
+        expect(() => validateClientMetadataEntry({ name: "mem0", version: value })).toThrow(
+            /^Wrapper version .* contains invalid characters/,
+        );
     });
 });
