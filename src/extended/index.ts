@@ -12,6 +12,8 @@ export type {
     ContextualizedEmbedOptions,
     ContextualizedEmbedResult,
 } from "./ExtendedClient.js";
+// Export client metadata types for wrapping libraries
+export type { ClientMetadataEntry } from "./client-metadata.js";
 // Export our extended client as the main one
 export {
     applyChunking,

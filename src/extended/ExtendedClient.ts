@@ -1,14 +1,21 @@
 /**
- * Extended VoyageAI client with local model support and client-side chunking
+ * Extended VoyageAI client with local model support, client-side chunking and client metadata headers
  */
 
 import type * as VoyageAI from "../api/index.js";
 import { VoyageAIClient as GeneratedClient } from "../Client.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
+import { mergeHeaders } from "../core/headers.js";
 import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
 import { tokenizeTexts } from "../local/tokenizer.js";
+import {
+    buildMetadataHeaders,
+    type ClientMetadataEntry,
+    formatWrapperHeader,
+    validateClientMetadataEntry,
+} from "./client-metadata.js";
 
 export type ChunkFn = (text: string) => string[];
 
@@ -31,6 +38,16 @@ export interface ContextualizedEmbedResult {
 }
 
 export class VoyageAIClient extends GeneratedClient {
+    private readonly _wrappers: ClientMetadataEntry[] = [];
+
+    constructor(options: GeneratedClient.Options = {}) {
+        const metadataHeaders = buildMetadataHeaders();
+        super({
+            ...options,
+            headers: mergeHeaders(metadataHeaders, options.headers) as GeneratedClient.Options["headers"],
+        });
+    }
+
     /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
      *
@@ -112,6 +129,33 @@ export class VoyageAIClient extends GeneratedClient {
      */
     public async tokenize(texts: string[], model: string): Promise<TokenizeResult[]> {
         return tokenizeTexts(model, texts);
+    }
+
+    /**
+     * Register a wrapper library's metadata so it is included in subsequent
+     * requests via the `X-VoyageAI-Wrapper` header. Name and version are trimmed;
+     * duplicate entries (same trimmed name + version) are silently ignored.
+     *
+     * @param entry - The wrapper name and version to register.
+     * @throws Error if the name or version is not a string, is empty after trimming,
+     *     contains anything but printable ASCII, or contains the reserved `|` / `/` delimiters.
+     *
+     * @example
+     *     client.appendClientMetadata({ name: "mem0", version: "1.2.3" });
+     */
+    public appendClientMetadata(rawEntry: ClientMetadataEntry): void {
+        const entry = validateClientMetadataEntry(rawEntry);
+        const exists = this._wrappers.some((w) => w.name === entry.name && w.version === entry.version);
+        if (!exists) {
+            this._wrappers.push(entry);
+            const wrapperValue = formatWrapperHeader(this._wrappers);
+            if (wrapperValue != null) {
+                (this._options as any).headers = mergeHeaders(
+                    (this._options as any).headers,
+                    { "X-VoyageAI-Wrapper": wrapperValue },
+                );
+            }
+        }
     }
 }
 
