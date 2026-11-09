@@ -35,7 +35,7 @@ const multimodal_inputs = [
             },
             {
                 type: "image_url",
-                imageUrl: "https://www.voyageai.com/feature.png",
+                imageUrl: "https://raw.githubusercontent.com/voyage-ai/voyageai-python/4333a2eee7c4558cf3d9ad5ac2576a98c94c363a/tests/example_image_01.jpg",
             },
             {
                 type: "image_base64",
@@ -51,7 +51,7 @@ const multimodal_inputs = [
             },
             {
                 type: "image_url",
-                imageUrl: "https://www.voyageai.com/feature.png",
+                imageUrl: "https://raw.githubusercontent.com/voyage-ai/voyageai-python/4333a2eee7c4558cf3d9ad5ac2576a98c94c363a/tests/example_image_01.jpg",
             },
         ]
     }
