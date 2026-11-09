@@ -16,7 +16,10 @@ describeIfNodeLlamaCpp("voyage-4-nano local model edge cases", () => {
     beforeAll(async () => {
         const mod = await import("../../src/extended/ExtendedClient");
         VoyageAIClient = mod.VoyageAIClient;
-    });
+        // Warm up once so the model download (~1.4 GB on a cold cache) doesn't count
+        // against the 60 s per-test timeouts below.
+        await new VoyageAIClient({ apiKey: "bogus-key-not-used" }).embed({ input: "warm-up", model: "voyage-4-nano" });
+    }, 600000);
 
     const makeClient = () => new VoyageAIClient({ apiKey: "bogus-key-not-used" });
 
