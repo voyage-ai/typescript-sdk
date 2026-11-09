@@ -113,16 +113,6 @@ describeIfTransformers("voyage-4-nano local model edge cases", () => {
 
     // --- Silently ignores unsupported params ---
 
-    test("silently ignores inputType parameter", async () => {
-        const client = makeClient();
-        const result = await client.embed({
-            input: "test",
-            model: "voyage-4-nano",
-            inputType: "query",
-        });
-        expect(result.data?.length).toBe(1);
-    }, 60000);
-
     test("silently ignores truncation parameter", async () => {
         const client = makeClient();
         const result = await client.embed({
@@ -204,6 +194,40 @@ describeIfTransformers("voyage-4-nano local model edge cases", () => {
         expect(typeof result.data![0].index).toBe("number");
         expect(Array.isArray(result.data![0].embedding)).toBe(true);
         expect(typeof result.usage!.totalTokens).toBe("number");
+    }, 60000);
+
+    // --- Input type prompts ---
+
+    // First values of the official MongoDB/voyage-4-nano embeddings (sentence-transformers, fp32)
+    // for "Which planet is known as the Red Planet?", with the model's own prompts.
+    const REFERENCE_PREFIX = {
+        none: [-0.006465, 0.000147, -0.012018, 0.016894, -0.017854, -0.013659],
+        query: [-0.005226, 0.005268, -0.014303, 0.01575, -0.02629, -0.009411],
+        document: [-0.021806, -0.020717, -0.019106, 0.010614, -0.004581, -0.032713],
+    };
+
+    test.each([
+        ["none", undefined],
+        ["query", "query"],
+        ["document", "document"],
+    ] as const)("inputType %s matches the official model", async (key, inputType) => {
+        const client = makeClient();
+        const result = await client.embed({
+            input: "Which planet is known as the Red Planet?",
+            model: "voyage-4-nano",
+            inputType,
+        });
+        const prefix = result.data![0].embedding!.slice(0, REFERENCE_PREFIX[key].length);
+        for (const [i, v] of prefix.entries()) {
+            expect(v).toBeCloseTo(REFERENCE_PREFIX[key][i], 4);
+        }
+    }, 60000);
+
+    test("token count includes the prompt", async () => {
+        const client = makeClient();
+        const plain = await client.embed({ input: "hello world", model: "voyage-4-nano" });
+        const query = await client.embed({ input: "hello world", model: "voyage-4-nano", inputType: "query" });
+        expect(query.usage!.totalTokens!).toBeGreaterThan(plain.usage!.totalTokens!);
     }, 60000);
 
     // --- No API call ---
