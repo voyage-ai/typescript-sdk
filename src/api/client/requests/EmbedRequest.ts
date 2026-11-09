@@ -10,9 +10,9 @@ import type * as VoyageAI from "../../index.js";
  *     }
  */
 export interface EmbedRequest {
-    /** A single text string, or a list of texts as a list of strings. Currently, we have two constraints on the list: <ul>  <li> The maximum length of the list is 128. </li>  <li> The total number of tokens in the list is at most 320K for `voyage-2`, and 120K for `voyage-large-2`, `voyage-finance-2`, `voyage-multilingual-2`, `voyage-law-2`, and `voyage-code-2`. </li> <ul> */
+    /** A single text string, or a list of texts as a list of strings. Currently, we have two constraints on the list: <ul>  <li> The maximum length of the list is 1,000. </li>  <li> The total number of tokens in the list is at most 1M for `voyage-4-lite` and `voyage-3.5-lite`; 320K for `voyage-4`, `voyage-3.5` and `voyage-2`; and 120K for `voyage-4-large`, `voyage-3-large`, `voyage-code-3`, `voyage-finance-2`, and `voyage-law-2`. </li> </ul> */
     input: VoyageAI.EmbedRequestInput;
-    /** Name of the model. Recommended options: `voyage-2`, `voyage-large-2`, `voyage-finance-2`, `voyage-multilingual-2`, `voyage-law-2`, `voyage-code-2`. */
+    /** Name of the model. Recommended options: `voyage-4-large`, `voyage-4`, `voyage-4-lite`, `voyage-3-large`, `voyage-3.5`, `voyage-3.5-lite`, `voyage-code-3`, `voyage-finance-2`, `voyage-law-2`. */
     model: string;
     /** Type of the input text. Defaults to `null`. Other options: `query`, `document`. */
     inputType?: VoyageAI.EmbedRequestInputType;
