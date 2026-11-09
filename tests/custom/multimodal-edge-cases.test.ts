@@ -35,7 +35,7 @@ describe("multimodalEmbed() edge cases", () => {
     test("image URL only", async () => {
         const result = await client.multimodalEmbed({
             inputs: [
-                { content: [{ type: "image_url", imageUrl: "https://www.voyageai.com/feature.png" }] },
+                { content: [{ type: "image_url", imageUrl: "https://raw.githubusercontent.com/voyage-ai/voyageai-python/4333a2eee7c4558cf3d9ad5ac2576a98c94c363a/tests/example_image_01.jpg" }] },
             ],
             model: "voyage-multimodal-3",
         });
@@ -62,7 +62,7 @@ describe("multimodalEmbed() edge cases", () => {
                 {
                     content: [
                         { type: "text", text: "A description of an image" },
-                        { type: "image_url", imageUrl: "https://www.voyageai.com/feature.png" },
+                        { type: "image_url", imageUrl: "https://raw.githubusercontent.com/voyage-ai/voyageai-python/4333a2eee7c4558cf3d9ad5ac2576a98c94c363a/tests/example_image_01.jpg" },
                     ],
                 },
             ],
