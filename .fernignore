@@ -9,3 +9,6 @@ src/extended/
 .gitignore
 renovate.json
 biome.json
+.fern/replay.lock
+.fern/replay.yml
+.gitattributes
