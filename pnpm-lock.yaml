@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@huggingface/transformers':
-        specifier: ^3.8.0
+        specifier: ^3.8.0 || ^4.0.0
         version: 3.8.1
       node-fetch:
         specifier: ^2.7.0

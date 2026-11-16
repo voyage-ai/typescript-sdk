@@ -61,7 +61,7 @@
         "node-fetch": "^2.7.0"
     },
     "peerDependencies": {
-        "@huggingface/transformers": "^3.8.0",
+        "@huggingface/transformers": "^3.8.0 || ^4.0.0",
         "onnxruntime-node": ">=1.17.0",
         "node-llama-cpp": "^3.22.3"
     },
