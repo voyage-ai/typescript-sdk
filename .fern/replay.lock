@@ -18,19 +18,25 @@ generations:
     cli_version: unknown
     generator_versions:
       fernapi/fern-typescript-sdk: 3.48.2
-current_generation: 7c69c184c2f3b2733cc2deee30ded8de4adfb4f5
+  - commit_sha: 568e92c196514619fea9adcf2e532cbba560c003
+    tree_hash: 55d971dabe622080d4f84b748184bc5665050091
+    timestamp: 2026-11-16T22:51:32.763Z
+    cli_version: unknown
+    generator_versions:
+      fernapi/fern-typescript-sdk: 3.48.2
+current_generation: 568e92c196514619fea9adcf2e532cbba560c003
 patches:
   - id: patch-6f73fab5
     content_hash: sha256:4ce7ccaa29fd7f1292b53f1a1c4b771672ed04b7cd306aa7e82e3cbc5dac1120
     original_commit: 6f73fab516b44c60b6293db5f13e619793cd793a
     original_message: Set packageManager to pnpm@10.34.5 (Replay test)
     original_author: fzowl <zoltan@voyageai.com>
-    base_generation: 7c69c184c2f3b2733cc2deee30ded8de4adfb4f5
+    base_generation: 568e92c196514619fea9adcf2e532cbba560c003
     files:
       - package.json
     patch_content: |
       diff --git a/package.json b/package.json
-      index b71d27e..dda947b 100644
+      index 0bfde88..f128bba 100644
       --- a/package.json
       +++ b/package.json
       @@ -94,7 +94,7 @@
@@ -129,7 +135,7 @@ patches:
                 "vitest": "^4.0.0",
                 "msw": "3.0.4",
                 "@types/node": "^18.19.70",
-                "typescript": "~5.9.0",
+                "typescript": "~5.9.2",
                 "@biomejs/biome": "2.6.6",
                 "@vitest/coverage-v8": "^4.0.0",
                 "node-llama-cpp": "^3.22.3"
@@ -147,3 +153,144 @@ patches:
             "sideEffects": false,
             "license": "MIT"
         }
+    user_owned: true
+  - id: patch-1c8cfa04
+    content_hash: sha256:da58683a56926b58de11b89186fb1216635cafd6a080b089caca72aee12a8680
+    original_commit: 1c8cfa0403ea651721f08ed2523db720f58a0347
+    original_message: Set typescript ~5.9.1 (Replay conflict test)
+    original_author: fzowl <zoltan@voyageai.com>
+    base_generation: 5edbb5bcba779a748418779b22f271e182c02a04
+    files:
+      - package.json
+    patch_content: |+
+      From 1c8cfa0403ea651721f08ed2523db720f58a0347 Mon Sep 17 00:00:00 2001
+      From: fzowl <zoltan@voyageai.com>
+      Date: Mon, 16 Nov 2026 23:50:42 +0100
+      Subject: [PATCH] Set typescript ~5.9.1 (Replay conflict test)
+
+      ---
+       package.json | 2 +-
+       1 file changed, 1 insertion(+), 1 deletion(-)
+
+      diff --git a/package.json b/package.json
+      index dda947b..30539fc 100644
+      --- a/package.json
+      +++ b/package.json
+      @@ -83,7 +83,7 @@
+               "vitest": "^4.0.0",
+               "msw": "3.0.4",
+               "@types/node": "^18.19.70",
+      -        "typescript": "~5.9.0",
+      +        "typescript": "~5.9.1",
+               "@biomejs/biome": "2.6.6",
+               "@vitest/coverage-v8": "^4.0.0",
+               "node-llama-cpp": "^3.22.3"
+      -- 
+      2.52.1
+
+    theirs_snapshot:
+      package.json: |
+        {
+            "name": "voyageai",
+            "version": "0.0.0",
+            "private": false,
+            "repository": {
+                "type": "git",
+                "url": "git+https://github.com/voyage-ai/typescript-sdk.git"
+            },
+            "type": "commonjs",
+            "main": "./dist/cjs/extended/index.js",
+            "module": "./dist/esm/index.mjs",
+            "types": "./dist/cjs/extended/index.d.ts",
+            "exports": {
+                ".": {
+                    "types": "./dist/cjs/extended/index.d.ts",
+                    "import": {
+                        "types": "./dist/esm/extended/index.d.mts",
+                        "default": "./dist/esm/extended/index.mjs"
+                    },
+                    "require": {
+                        "types": "./dist/cjs/extended/index.d.ts",
+                        "default": "./dist/cjs/extended/index.js"
+                    },
+                    "default": "./dist/cjs/extended/index.js"
+                },
+                "./serialization": {
+                    "types": "./dist/cjs/serialization/index.d.ts",
+                    "import": {
+                        "types": "./dist/esm/serialization/index.d.mts",
+                        "default": "./dist/esm/serialization/index.mjs"
+                    },
+                    "require": {
+                        "types": "./dist/cjs/serialization/index.d.ts",
+                        "default": "./dist/cjs/serialization/index.js"
+                    },
+                    "default": "./dist/cjs/serialization/index.js"
+                },
+                "./package.json": "./package.json"
+            },
+            "files": [
+                "dist",
+                "reference.md",
+                "README.md",
+                "LICENSE"
+            ],
+            "scripts": {
+                "format": "biome format --write --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+                "format:check": "biome format --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+                "lint": "biome lint --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+                "lint:fix": "biome lint --fix --unsafe --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+                "check": "biome check --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+                "check:fix": "biome check --fix --unsafe --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+                "build": "pnpm build:cjs && pnpm build:esm",
+                "build:cjs": "tsc --project ./tsconfig.cjs.json",
+                "build:esm": "tsc --project ./tsconfig.esm.json && node scripts/rename-to-esm-files.js dist/esm",
+                "test": "vitest",
+                "test:unit": "vitest --project unit",
+                "test:wire": "vitest --project wire"
+            },
+            "dependencies": {
+                "node-fetch": "^2.7.0"
+            },
+            "peerDependencies": {
+                "@huggingface/transformers": "^3.8.0 || ^4.0.0",
+                "onnxruntime-node": ">=1.17.0",
+                "node-llama-cpp": "^3.22.3"
+            },
+            "peerDependenciesMeta": {
+                "@huggingface/transformers": {
+                    "optional": true
+                },
+                "onnxruntime-node": {
+                    "optional": true
+                },
+                "node-llama-cpp": {
+                    "optional": true
+                }
+            },
+            "devDependencies": {
+                "@types/node-fetch": "^2.6.12",
+                "webpack": "^5.97.1",
+                "ts-loader": "^9.5.1",
+                "vitest": "^4.0.0",
+                "msw": "3.0.4",
+                "@types/node": "^18.19.70",
+                "typescript": "~5.9.1",
+                "@biomejs/biome": "2.6.6",
+                "@vitest/coverage-v8": "^4.0.0",
+                "node-llama-cpp": "^3.22.3"
+            },
+            "browser": {
+                "fs": false,
+                "os": false,
+                "path": false,
+                "stream": false
+            },
+            "packageManager": "pnpm@10.34.5",
+            "engines": {
+                "node": ">=18.0.0"
+            },
+            "sideEffects": false,
+            "license": "MIT"
+        }
+    status: unresolved
