@@ -35,6 +35,31 @@ export async function getTokenizerForModel(model: string): Promise<any> {
     return tokenizer;
 }
 
+const idToTokenCache = new WeakMap<object, (id: number) => string | undefined>();
+
+/**
+ * Returns a lookup from token id to token string.
+ * @huggingface/transformers v3 exposes the vocabulary as an array on `tokenizer.model.vocab`;
+ * v4 removed `tokenizer.model` and provides `get_vocab()` (token -> id Map) instead.
+ */
+export function getIdToToken(tokenizer: any): (id: number) => string | undefined {
+    let lookup = idToTokenCache.get(tokenizer);
+    if (!lookup) {
+        const vocab = tokenizer.model?.vocab;
+        if (vocab != null) {
+            lookup = (id) => vocab[id];
+        } else {
+            const inverse = new Map<number, string>();
+            for (const [token, id] of tokenizer.get_vocab() as Map<string, number>) {
+                inverse.set(id, token);
+            }
+            lookup = (id) => inverse.get(id);
+        }
+        idToTokenCache.set(tokenizer, lookup);
+    }
+    return lookup;
+}
+
 export interface TokenizeResult {
     tokens: string[];
     ids: number[];
@@ -47,12 +72,13 @@ export async function tokenizeTexts(model: string, texts: string[]): Promise<Tok
     }
 
     const tokenizer = await getTokenizerForModel(model);
+    const idToToken = getIdToToken(tokenizer);
     const results: TokenizeResult[] = [];
 
     for (const text of texts) {
         const encoded = tokenizer(text);
         const ids: number[] = Array.from(encoded.input_ids.data, (v: any) => Number(v));
-        const tokens: string[] = ids.map((id: number) => tokenizer.model.vocab[id] ?? `<unk:${id}>`);
+        const tokens: string[] = ids.map((id: number) => idToToken(id) ?? `<unk:${id}>`);
         results.push({ tokens, ids });
     }
 
