@@ -1,6 +1,6 @@
 # Voyage TypeScript Library
 
-[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2Fvoyage-ai%2Ftypescript-sdk)
+[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=Voyage%2FTypeScript)
 [![npm shield](https://img.shields.io/npm/v/voyageai)](https://www.npmjs.com/package/voyageai)
 
 The Voyage TypeScript library provides convenient access to the Voyage APIs from TypeScript.
@@ -9,7 +9,7 @@ The Voyage TypeScript library provides convenient access to the Voyage APIs from
 
 - [Documentation](#documentation)
 - [Installation](#installation)
-- [Batch Request](#batch-request)
+- [Reference](#reference)
 - [Usage](#usage)
 - [Request and Response Types](#request-and-response-types)
 - [Exception Handling](#exception-handling)
@@ -23,7 +23,6 @@ The Voyage TypeScript library provides convenient access to the Voyage APIs from
   - [Logging](#logging)
   - [Runtime Compatibility](#runtime-compatibility)
 - [Contributing](#contributing)
-- [Reference](#reference)
 
 ## Documentation
 
@@ -35,19 +34,9 @@ API reference documentation is available [here](https://docs.voyageai.com/refere
 npm i -s voyageai
 ```
 
-## Batch request
+## Reference
 
-The SDK supports batch requests. Instantiate and use the client similarly as above:
-
-```typescript
-import { VoyageAIClient } from "voyageai";
-
-const client = new VoyageAIClient({ apiKey: "YOUR_API_KEY" });
-await client.embed({
-    input: ["input1", "input2", "input3", "input4"],
-    model: "model",
-});
-```
+A full reference for this library is available [here](./reference.md).
 
 ## Usage
 
@@ -286,6 +275,3 @@ a proof of concept, but know that we will not be able to merge it as-is. We sugg
 an issue first to discuss with us!
 
 On the other hand, contributions to the README are always very welcome!
-## Reference
-
-A full reference for this library is available [here](https://github.com/voyage-ai/typescript-sdk/blob/HEAD/./reference.md).
