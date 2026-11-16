@@ -29,7 +29,7 @@
         "extraDevDependencies": {
             "vitest": "^4.0.0",
             "@vitest/coverage-v8": "^4.0.0",
-            "typescript": "~5.9.0",
+            "typescript": "~5.9.2",
             "msw": "3.0.4",
             "@biomejs/biome": "2.6.6",
             "node-llama-cpp": "^3.22.3"
@@ -51,6 +51,6 @@
             }
         }
     },
-    "originGitCommit": "41df005d9326a78f6eae469cb58660a5a85f6f74",
+    "originGitCommit": "fe97b415968c4b504770efc4a5880fef6e7e055f",
     "sdkVersion": "0.0.0"
 }
