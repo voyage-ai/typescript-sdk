@@ -25,8 +25,9 @@ export function getDefaultBaseUrl(apiKey: string): string {
  * Pick the base URL from the API key unless the caller pinned `baseUrl` or `environment`.
  *
  * The key is resolved on every request the same way the generated auth provider does it (the
- * `apiKey` option first, then `VOYAGE_API_KEY`), so the URL and the bearer token always come from
- * the same key. Without a key the Voyage AI API URL is used, which is also the generated client's default.
+ * `apiKey` option first, then `VOYAGE_API_KEY`). The two lookups are independent, so an `apiKey`
+ * supplier should return the same value for the duration of one request. Without a key the Voyage
+ * AI API URL is used, which is also the generated client's default.
  */
 export function withDefaultBaseUrl<T extends BaseClientOptions & { apiKey?: core.Supplier<string> }>(options: T): T {
     if (options.baseUrl != null || options.environment != null) {
