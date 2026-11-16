@@ -7,3 +7,5 @@ LICENSE
 src/local/
 src/extended/
 .gitignore
+renovate.json
+biome.json
