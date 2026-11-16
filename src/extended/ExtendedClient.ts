@@ -10,6 +10,7 @@ import { mergeHeaders } from "../core/headers.js";
 import { isLocalModel, localEmbed } from "../local/index.js";
 import type { TokenizeResult } from "../local/tokenizer.js";
 import { tokenizeTexts } from "../local/tokenizer.js";
+import { withDefaultBaseUrl } from "./base-url.js";
 import {
     buildMetadataHeaders,
     type ClientMetadataEntry,
@@ -43,7 +44,7 @@ export class VoyageAIClient extends GeneratedClient {
     constructor(options: GeneratedClient.Options = {}) {
         const metadataHeaders = buildMetadataHeaders();
         super({
-            ...options,
+            ...withDefaultBaseUrl(options),
             headers: mergeHeaders(metadataHeaders, options.headers) as GeneratedClient.Options["headers"],
         });
     }
