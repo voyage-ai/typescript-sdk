@@ -11,6 +11,7 @@ export * from "../exports.js";
 export { isLocalModel, localEmbed } from "../local/index.js";
 export type { TokenizeResult } from "../local/tokenizer.js";
 export * as serialization from "../serialization/index.js";
+export { getDefaultBaseUrl, MONGODB_ATLAS_BASE_URL, VOYAGE_API_BASE_URL } from "./base-url.js";
 // Export client metadata types for wrapping libraries
 export type { ClientMetadataEntry } from "./client-metadata.js";
 export type {
