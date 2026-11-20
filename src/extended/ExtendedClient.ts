@@ -16,6 +16,7 @@ import {
     type ClientMetadataEntry,
     formatWrapperHeader,
     validateClientMetadataEntry,
+    withModelHeader,
 } from "./client-metadata.js";
 
 export type ChunkFn = (text: string) => string[];
@@ -81,7 +82,28 @@ export class VoyageAIClient extends GeneratedClient {
                 localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse })),
             );
         }
-        return super.embed(request, requestOptions);
+        return rejectOnThrow(() => super.embed(request, withModelHeader(request.model, requestOptions)));
+    }
+
+    /**
+     * Voyage reranker endpoint receives as input a query, a list of documents, and other arguments such as the model name, and returns a response containing the reranking results.
+     * The model is also sent as the `X-Voyage-Model` header.
+     */
+    public rerank(
+        request: VoyageAI.RerankRequest,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): HttpResponsePromise<VoyageAI.RerankResponse> {
+        return rejectOnThrow(() => super.rerank(request, withModelHeader(request.model, requestOptions)));
+    }
+
+    /**
+     * Voyage multimodal embedding endpoint. The model is also sent as the `X-Voyage-Model` header.
+     */
+    public multimodalEmbed(
+        request: VoyageAI.MultimodalEmbedRequest,
+        requestOptions?: GeneratedClient.RequestOptions,
+    ): HttpResponsePromise<VoyageAI.MultimodalEmbedResponse> {
+        return rejectOnThrow(() => super.multimodalEmbed(request, withModelHeader(request.model, requestOptions)));
     }
 
     /**
@@ -108,7 +130,7 @@ export class VoyageAIClient extends GeneratedClient {
 
         const response = await super.contextualizedEmbed(
             { ...normalizedRequest, inputs: requestInputs },
-            requestOptions,
+            withModelHeader(normalizedRequest.model, requestOptions),
         );
 
         const clientChunkTexts = chunkFn ? (requestInputs as string[][]) : undefined;
@@ -134,7 +156,7 @@ export class VoyageAIClient extends GeneratedClient {
 
     /**
      * Register a wrapper library's metadata so it is included in subsequent
-     * requests via the `X-VoyageAI-Wrapper` header. Name and version are trimmed;
+     * requests via the `X-Voyage-Wrapper` header. Name and version are trimmed;
      * duplicate entries (same trimmed name + version) are silently ignored.
      *
      * @param entry - The wrapper name and version to register.
@@ -151,12 +173,20 @@ export class VoyageAIClient extends GeneratedClient {
             this._wrappers.push(entry);
             const wrapperValue = formatWrapperHeader(this._wrappers);
             if (wrapperValue != null) {
-                (this._options as any).headers = mergeHeaders(
-                    (this._options as any).headers,
-                    { "X-VoyageAI-Wrapper": wrapperValue },
-                );
+                (this._options as any).headers = mergeHeaders((this._options as any).headers, {
+                    "X-Voyage-Wrapper": wrapperValue,
+                });
             }
         }
+    }
+}
+
+/** Turn a synchronous validation error into a rejected promise, so callers see one failure mode. */
+function rejectOnThrow<T>(call: () => HttpResponsePromise<T>): HttpResponsePromise<T> {
+    try {
+        return call();
+    } catch (error) {
+        return HttpResponsePromise.fromPromise<T>(Promise.reject(error));
     }
 }
 

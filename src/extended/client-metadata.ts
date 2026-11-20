@@ -1,72 +1,31 @@
-import * as os from "os";
+import { mergeHeaders } from "../core/headers.js";
 import { SDK_VERSION } from "../version.js";
-
-export interface RuntimeInfo {
-    name: string;
-    version: string;
-}
 
 export interface ClientMetadataEntry {
     name: string;
     version: string;
 }
 
-declare const Deno: { version: { deno: string } } | undefined;
-declare const Bun: { version: string } | undefined;
-
-export function detectRuntime(): RuntimeInfo {
-    try {
-        if (typeof Deno !== "undefined" && Deno?.version?.deno) {
-            return { name: "Deno", version: Deno.version.deno };
-        }
-        if (typeof Bun !== "undefined" && Bun?.version) {
-            return { name: "Bun", version: Bun.version };
-        }
-        if (typeof process !== "undefined" && process.versions?.node) {
-            return { name: "Node.js", version: process.versions.node };
-        }
-    } catch {}
-    return { name: "unknown", version: "unknown" };
-}
-
-// Canonical OS names follow Python's platform.system() so both SDKs report the same values.
-const OS_NAMES: Record<string, string> = {
-    darwin: "Darwin",
-    linux: "Linux",
-    win32: "Windows",
-    freebsd: "FreeBSD",
-    openbsd: "OpenBSD",
-    netbsd: "NetBSD",
-    sunos: "SunOS",
-    aix: "AIX",
-    android: "Android",
-};
-
-export function detectOS(): string {
-    try {
-        const platform = os.platform();
-        if (platform) return OS_NAMES[platform] ?? platform;
-    } catch {}
-    return "unknown";
-}
-
+/** Headers sent with every request: only the SDK identity in `User-Agent`. */
 export function buildMetadataHeaders(): Record<string, string> {
-    const runtime = detectRuntime();
-    const osName = detectOS();
-    const packageVersion = SDK_VERSION || "unknown";
+    return { "User-Agent": `voyageai-typescript/${SDK_VERSION || "unknown"}` };
+}
 
-    const headers: Record<string, string> = {
-        "X-VoyageAI-Lang": "typescript",
-        "X-VoyageAI-Package": "voyageai",
-        "X-VoyageAI-Package-Version": packageVersion,
-        "X-VoyageAI-Runtime": runtime.name,
-        "X-VoyageAI-Runtime-Version": runtime.version,
-        "X-VoyageAI-OS": osName,
-        "X-VoyageAI-Telemetry-Version": "1",
-        "User-Agent": `voyageai-typescript/${packageVersion} ${runtime.name}/${runtime.version} ${osName}`,
-    };
+export const MODEL_HEADER = "X-Voyage-Model";
 
-    return headers;
+/**
+ * Return request options carrying the mandatory `X-Voyage-Model` header.
+ * The header always mirrors the request body's `model`, so it overrides any caller-supplied value.
+ * @throws Error if `model` is not a non-empty string.
+ */
+export function withModelHeader<T extends { headers?: Record<string, unknown> }>(model: string, requestOptions?: T): T {
+    if (typeof model !== "string" || model.trim().length === 0) {
+        throw new Error("model is required and must be a non-empty string.");
+    }
+    return {
+        ...requestOptions,
+        headers: mergeHeaders(requestOptions?.headers, { [MODEL_HEADER]: model }),
+    } as T;
 }
 
 export function formatWrapperHeader(wrappers: ClientMetadataEntry[]): string | null {
@@ -74,7 +33,7 @@ export function formatWrapperHeader(wrappers: ClientMetadataEntry[]): string | n
     return wrappers.map((w) => `${w.name}/${w.version}`).join("|");
 }
 
-// Only printable ASCII is allowed; "|" and "/" are the delimiters of the X-VoyageAI-Wrapper header.
+// Only printable ASCII is allowed; "|" and "/" are the delimiters of the X-Voyage-Wrapper header.
 // Checked on the raw value, so both SDKs accept exactly the same inputs.
 const INVALID_WRAPPER_CHARS = /[^\x20-\x7e]|[|/]/;
 
