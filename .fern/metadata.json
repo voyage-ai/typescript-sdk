@@ -1,5 +1,5 @@
 {
-    "cliVersion": "3.79.2",
+    "cliVersion": "5.217.1",
     "generatorName": "fernapi/fern-typescript-sdk",
     "generatorVersion": "3.48.2",
     "generatorConfig": {
@@ -27,11 +27,15 @@
             }
         },
         "extraDevDependencies": {
-            "@vitest/coverage-v8": "^3.2.4",
+            "vitest": "^4.0.0",
+            "@vitest/coverage-v8": "^4.0.0",
+            "typescript": "~5.9.0",
+            "msw": "3.0.4",
+            "@biomejs/biome": "2.6.6",
             "node-llama-cpp": "^3.22.3"
         },
         "extraPeerDependencies": {
-            "@huggingface/transformers": "^3.8.0",
+            "@huggingface/transformers": "^3.8.0 || ^4.0.0",
             "onnxruntime-node": ">=1.17.0",
             "node-llama-cpp": "^3.22.3"
         },
@@ -47,5 +51,6 @@
             }
         }
     },
-    "sdkVersion": "0.6.0"
+    "originGitCommit": "e9420e58e627f8ba6a69bb915929fd350ac7999f",
+    "sdkVersion": "0.0.0-release-test.1"
 }
