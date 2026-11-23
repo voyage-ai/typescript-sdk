@@ -84,7 +84,7 @@
         "msw": "3.0.4",
         "@types/node": "^18.19.70",
         "typescript": "~5.9.0",
-        "@biomejs/biome": "2.6.6",
+        "@biomejs/biome": "2.6.8",
         "@vitest/coverage-v8": "^4.0.0",
         "node-llama-cpp": "^3.22.3"
     },
