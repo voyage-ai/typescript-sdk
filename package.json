@@ -94,7 +94,7 @@
         "path": false,
         "stream": false
     },
-    "packageManager": "pnpm@10.34.5",
+    "packageManager": "pnpm@12.22.0",
     "engines": {
         "node": ">=18.0.0"
     },
