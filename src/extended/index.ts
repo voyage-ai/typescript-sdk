@@ -4,6 +4,8 @@ export * as VoyageAI from "../api/index.js";
 export type { BaseClientOptions, BaseRequestOptions } from "../BaseClient.js";
 // For advanced users who want the original generated client
 export { VoyageAIClient as GeneratedVoyageAIClient } from "../Client.js";
+// Cloud providers (AWS SageMaker) and the provider seam
+export * from "../cloud/index.js";
 export { VoyageAIEnvironment } from "../environments.js";
 export * from "../errors/index.js";
 export * from "../exports.js";
@@ -19,6 +21,7 @@ export type {
     ContextualizedEmbeddingsResultItem,
     ContextualizedEmbedOptions,
     ContextualizedEmbedResult,
+    VoyageAIClientOptions,
 } from "./ExtendedClient.js";
 // Export our extended client as the main one
 export {

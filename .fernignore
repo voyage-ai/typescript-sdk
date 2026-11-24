@@ -6,6 +6,7 @@ vitest.config.mts
 LICENSE
 src/local/
 src/extended/
+src/cloud/
 .gitignore
 renovate.json
 biome.json
