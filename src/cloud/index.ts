@@ -5,6 +5,10 @@
  * underneath the generated client through its public `fetch` option (see `transport-fetch.ts`).
  * Cloud SDKs are never imported eagerly — each provider loads its SDK on first use, so they stay
  * optional for every application that does not use that cloud.
+ *
+ * Clients created without a `provider` option pick their provider from `VOYAGE_CLOUD_PROVIDER`
+ * (see `env-provider.ts`), so code that builds its own client — such as a LangChain or LlamaIndex
+ * integration — reaches a cloud provider unchanged.
  */
 
 export type { AwsDeps, SageMakerSigner } from "./aws/awsDeps.js";

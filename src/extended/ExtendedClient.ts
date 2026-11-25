@@ -5,6 +5,7 @@
 
 import type * as VoyageAI from "../api/index.js";
 import { VoyageAIClient as GeneratedClient } from "../Client.js";
+import { environmentProvider } from "../cloud/env-provider.js";
 import { isProviderResolutionError, type Provider, type Transport } from "../cloud/providers.js";
 import { createTransportFetch } from "../cloud/transport-fetch.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
@@ -46,12 +47,33 @@ export interface ContextualizedEmbedResult {
 export type VoyageAIClientOptions = GeneratedClient.Options & {
     /**
      * Backend to route `embed`, `rerank`, `multimodalEmbed` and `contextualizedEmbed` to, e.g.
-     * `sagemakerProvider({ region })`. Models the provider declines go to the Voyage API. Without a
-     * provider every call goes to the Voyage API. `fetch`, `headers`, `timeoutInSeconds`,
-     * `maxRetries` and `logging` apply to provider calls too.
+     * `sagemakerProvider({ region })`. Models the provider declines go to the Voyage API. `fetch`,
+     * `headers`, `timeoutInSeconds`, `maxRetries` and `logging` apply to provider calls too.
+     *
+     * When omitted, the `VOYAGE_CLOUD_PROVIDER` environment variable decides (`aws`: SageMaker,
+     * configured from the standard AWS environment); unset, every call goes to the Voyage API. That
+     * is how clients created inside integrations (LangChain, LlamaIndex, ...) reach a cloud provider
+     * unchanged.
      */
     provider?: Provider;
 };
+
+/**
+ * Drop a blank `apiKey`, so it counts as "not given" — the generated auth then falls back to
+ * `VOYAGE_API_KEY` or reports the missing key, instead of sending `Bearer ` with an empty token.
+ * Integrations commonly pass `apiKey: process.env.SOMETHING ?? ""`.
+ */
+function withoutBlankApiKey(options: GeneratedClient.Options): GeneratedClient.Options {
+    if (typeof options.apiKey === "string" && options.apiKey.trim().length === 0) {
+        const { apiKey: _blank, ...rest } = options;
+        return rest;
+    }
+    return options;
+}
+
+function isNonBlank(value: string | undefined): boolean {
+    return value != null && value.trim().length > 0;
+}
 
 /**
  * Stands in for the Voyage API key on provider calls, so the generated bearer auth never fails
@@ -67,13 +89,14 @@ export class VoyageAIClient extends GeneratedClient {
     private readonly _warnedModels: Set<string> = new Set();
 
     constructor(options: VoyageAIClientOptions = {}) {
-        const { provider, ...clientOptions } = options;
+        const { provider, ...rest } = options;
+        const clientOptions = withoutBlankApiKey(rest);
         const metadataHeaders = buildMetadataHeaders();
         super({
             ...withDefaultBaseUrl(clientOptions),
             headers: mergeHeaders(metadataHeaders, clientOptions.headers) as GeneratedClient.Options["headers"],
         });
-        this._provider = provider;
+        this._provider = provider ?? environmentProvider();
     }
 
     /** The provider this client routes calls to, or `undefined` when every call goes to the Voyage API. */
@@ -280,7 +303,9 @@ export class VoyageAIClient extends GeneratedClient {
     }
 
     private hasApiKey(): boolean {
-        return this._options.apiKey != null || (typeof process !== "undefined" && process.env?.VOYAGE_API_KEY != null);
+        return (
+            this._options.apiKey != null || (typeof process !== "undefined" && isNonBlank(process.env?.VOYAGE_API_KEY))
+        );
     }
 
     /** Emit the fallback warning at most once per model (same wording as the Python SDK). */
