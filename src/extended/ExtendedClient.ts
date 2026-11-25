@@ -1,9 +1,12 @@
 /**
- * Extended VoyageAI client with local model support, client-side chunking and client metadata headers
+ * Extended VoyageAI client with local model support, client-side chunking, client metadata headers
+ * and cloud provider routing
  */
 
 import type * as VoyageAI from "../api/index.js";
 import { VoyageAIClient as GeneratedClient } from "../Client.js";
+import { isProviderResolutionError, type Provider, type Transport } from "../cloud/providers.js";
+import { createTransportFetch } from "../cloud/transport-fetch.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
 import { unknownRawResponse } from "../core/fetcher/RawResponse.js";
 import { mergeHeaders } from "../core/headers.js";
@@ -39,22 +42,50 @@ export interface ContextualizedEmbedResult {
     rawResponse: VoyageAI.ContextualizedEmbedResponse;
 }
 
+/** Options of {@link VoyageAIClient}: the generated client's options plus an optional provider. */
+export type VoyageAIClientOptions = GeneratedClient.Options & {
+    /**
+     * Backend to route `embed`, `rerank`, `multimodalEmbed` and `contextualizedEmbed` to, e.g.
+     * `sagemakerProvider({ region })`. Models the provider declines go to the Voyage API. Without a
+     * provider every call goes to the Voyage API. `fetch`, `headers`, `timeoutInSeconds`,
+     * `maxRetries` and `logging` apply to provider calls too.
+     */
+    provider?: Provider;
+};
+
+/**
+ * Stands in for the Voyage API key on provider calls, so the generated bearer auth never fails
+ * for a client that has only cloud credentials. The resulting `Authorization` header is dropped
+ * before the request reaches the provider, which signs the request itself.
+ */
+const PROVIDER_CALL_API_KEY = "voyageai-provider-call";
+
 export class VoyageAIClient extends GeneratedClient {
     private readonly _wrappers: ClientMetadataEntry[] = [];
+    private readonly _provider: Provider | undefined;
+    /** Models already warned about after a provider resolution failure (at most once per model). */
+    private readonly _warnedModels: Set<string> = new Set();
 
-    constructor(options: GeneratedClient.Options = {}) {
+    constructor(options: VoyageAIClientOptions = {}) {
+        const { provider, ...clientOptions } = options;
         const metadataHeaders = buildMetadataHeaders();
         super({
-            ...withDefaultBaseUrl(options),
-            headers: mergeHeaders(metadataHeaders, options.headers) as GeneratedClient.Options["headers"],
+            ...withDefaultBaseUrl(clientOptions),
+            headers: mergeHeaders(metadataHeaders, clientOptions.headers) as GeneratedClient.Options["headers"],
         });
+        this._provider = provider;
+    }
+
+    /** The provider this client routes calls to, or `undefined` when every call goes to the Voyage API. */
+    public get provider(): Provider | undefined {
+        return this._provider;
     }
 
     /**
      * Voyage embedding endpoint receives as input a string (or a list of strings) and other arguments such as the preferred model name, and returns a response containing a list of embeddings.
      *
      * For local models (e.g., 'voyage-4-nano'), embeddings are computed locally using Transformers.js.
-     * For all other models, the request is forwarded to the Voyage AI API.
+     * For all other models, the request is forwarded to the configured provider, or the Voyage AI API.
      *
      * @param {VoyageAI.EmbedRequest} request
      * @param {GeneratedClient.RequestOptions} requestOptions - Request-specific configuration.
@@ -82,7 +113,9 @@ export class VoyageAIClient extends GeneratedClient {
                 localEmbed(request).then((data) => ({ data, rawResponse: unknownRawResponse })),
             );
         }
-        return rejectOnThrow(() => super.embed(request, withModelHeader(request.model, requestOptions)));
+        return this.send(request.model, requestOptions, (providerClient, options) =>
+            providerClient ? providerClient.embed(request, options) : super.embed(request, options),
+        );
     }
 
     /**
@@ -93,7 +126,9 @@ export class VoyageAIClient extends GeneratedClient {
         request: VoyageAI.RerankRequest,
         requestOptions?: GeneratedClient.RequestOptions,
     ): HttpResponsePromise<VoyageAI.RerankResponse> {
-        return rejectOnThrow(() => super.rerank(request, withModelHeader(request.model, requestOptions)));
+        return this.send(request.model, requestOptions, (providerClient, options) =>
+            providerClient ? providerClient.rerank(request, options) : super.rerank(request, options),
+        );
     }
 
     /**
@@ -103,7 +138,9 @@ export class VoyageAIClient extends GeneratedClient {
         request: VoyageAI.MultimodalEmbedRequest,
         requestOptions?: GeneratedClient.RequestOptions,
     ): HttpResponsePromise<VoyageAI.MultimodalEmbedResponse> {
-        return rejectOnThrow(() => super.multimodalEmbed(request, withModelHeader(request.model, requestOptions)));
+        return this.send(request.model, requestOptions, (providerClient, options) =>
+            providerClient ? providerClient.multimodalEmbed(request, options) : super.multimodalEmbed(request, options),
+        );
     }
 
     /**
@@ -128,9 +165,11 @@ export class VoyageAIClient extends GeneratedClient {
             ? applyChunking(normalizedRequest.inputs as string[][], chunkFn)
             : normalizedRequest.inputs;
 
-        const response = await super.contextualizedEmbed(
-            { ...normalizedRequest, inputs: requestInputs },
-            withModelHeader(normalizedRequest.model, requestOptions),
+        const apiBody = { ...normalizedRequest, inputs: requestInputs };
+        const response = await this.send(normalizedRequest.model, requestOptions, (providerClient, options) =>
+            providerClient
+                ? providerClient.contextualizedEmbed(apiBody, options)
+                : super.contextualizedEmbed(apiBody, options),
         );
 
         const clientChunkTexts = chunkFn ? (requestInputs as string[][]) : undefined;
@@ -177,6 +216,84 @@ export class VoyageAIClient extends GeneratedClient {
                     "X-Voyage-Wrapper": wrapperValue,
                 });
             }
+        }
+    }
+
+    /**
+     * Run one API call on the right generated client: this one (the Voyage API) when there is no
+     * provider or the provider does not serve `model`, otherwise a generated client bound to the
+     * resolved transport. `call` receives `undefined` for the Voyage API path.
+     */
+    private send<T>(
+        model: string,
+        requestOptions: GeneratedClient.RequestOptions | undefined,
+        call: (
+            providerClient: GeneratedClient | undefined,
+            options: GeneratedClient.RequestOptions,
+        ) => HttpResponsePromise<T>,
+    ): HttpResponsePromise<T> {
+        return rejectOnThrow(() => {
+            const options = withModelHeader(model, requestOptions);
+            if (this._provider === undefined) {
+                return call(undefined, options);
+            }
+            return HttpResponsePromise.fromPromise(
+                this.resolveTransport(this._provider, model).then((transport) =>
+                    call(transport && this.providerClient(transport), options).withRawResponse(),
+                ),
+            );
+        });
+    }
+
+    /**
+     * Ask the provider for a transport. A {@link ProviderResolutionError} falls back to the Voyage
+     * API (warned once per model) when a Voyage API key is configured, and propagates otherwise —
+     * the fallback would fail anyway, and the resolution error explains what went wrong.
+     */
+    private async resolveTransport(provider: Provider, model: string): Promise<Transport | undefined> {
+        try {
+            return await provider.resolve(model);
+        } catch (error) {
+            if (isProviderResolutionError(error) && this.hasApiKey()) {
+                this.warnFallbackOnce(model, provider.name, error.message);
+                return undefined;
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * A generated client whose requests go to `transport` instead of the Voyage API. It shares
+     * this client's headers (SDK identity, wrapper metadata), retry, timeout and logging settings,
+     * and runs the transport as its `fetch`.
+     */
+    private providerClient(transport: Transport): GeneratedClient {
+        return new GeneratedClient({
+            baseUrl: transport.baseUrl,
+            apiKey: PROVIDER_CALL_API_KEY,
+            headers: this._options.headers,
+            timeoutInSeconds: this._options.timeoutInSeconds,
+            maxRetries: this._options.maxRetries,
+            logging: this._options.logging,
+            fetch: createTransportFetch(transport, this._options.fetch),
+        });
+    }
+
+    private hasApiKey(): boolean {
+        return this._options.apiKey != null || (typeof process !== "undefined" && process.env?.VOYAGE_API_KEY != null);
+    }
+
+    /** Emit the fallback warning at most once per model (same wording as the Python SDK). */
+    private warnFallbackOnce(model: string, providerName: string, reason: string): void {
+        if (this._warnedModels.has(model)) {
+            return;
+        }
+        this._warnedModels.add(model);
+        const message = `Model '${model}' could not be routed to provider '${providerName}' (${reason}); falling back to the Voyage API.`;
+        if (typeof process !== "undefined" && typeof process.emitWarning === "function") {
+            process.emitWarning(message);
+        } else {
+            console.warn(message);
         }
     }
 }
