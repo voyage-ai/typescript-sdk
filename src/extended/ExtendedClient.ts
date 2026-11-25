@@ -5,7 +5,7 @@
 
 import type * as VoyageAI from "../api/index.js";
 import { VoyageAIClient as GeneratedClient } from "../Client.js";
-import { getDefaultProvider } from "../cloud/default-provider.js";
+import { environmentProvider } from "../cloud/env-provider.js";
 import { isProviderResolutionError, type Provider, type Transport } from "../cloud/providers.js";
 import { createTransportFetch } from "../cloud/transport-fetch.js";
 import { HttpResponsePromise } from "../core/fetcher/HttpResponsePromise.js";
@@ -50,12 +50,12 @@ export type VoyageAIClientOptions = GeneratedClient.Options & {
      * `sagemakerProvider({ region })`. Models the provider declines go to the Voyage API. `fetch`,
      * `headers`, `timeoutInSeconds`, `maxRetries` and `logging` apply to provider calls too.
      *
-     * When omitted, the ambient configuration decides: the `setDefaultProvider` default, else the
-     * `VOYAGE_CLOUD_PROVIDER` environment variable, else the Voyage API. That is how clients created
-     * inside integrations (LangChain, LlamaIndex, ...) reach a cloud provider unchanged. `null` pins
-     * this client to the Voyage API regardless.
+     * When omitted, the `VOYAGE_CLOUD_PROVIDER` environment variable decides (`aws`: SageMaker,
+     * configured from the standard AWS environment); unset, every call goes to the Voyage API. That
+     * is how clients created inside integrations (LangChain, LlamaIndex, ...) reach a cloud provider
+     * unchanged.
      */
-    provider?: Provider | null;
+    provider?: Provider;
 };
 
 /**
@@ -96,7 +96,7 @@ export class VoyageAIClient extends GeneratedClient {
             ...withDefaultBaseUrl(clientOptions),
             headers: mergeHeaders(metadataHeaders, clientOptions.headers) as GeneratedClient.Options["headers"],
         });
-        this._provider = provider === undefined ? getDefaultProvider() : (provider ?? undefined);
+        this._provider = provider ?? environmentProvider();
     }
 
     /** The provider this client routes calls to, or `undefined` when every call goes to the Voyage API. */

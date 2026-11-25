@@ -6,9 +6,9 @@
  * Cloud SDKs are never imported eagerly — each provider loads its SDK on first use, so they stay
  * optional for every application that does not use that cloud.
  *
- * Clients created without a `provider` option follow the ambient configuration
- * (`setDefaultProvider`, then `VOYAGE_CLOUD_PROVIDER`), so code that builds its own client — such as
- * a LangChain or LlamaIndex integration — reaches a cloud provider unchanged.
+ * Clients created without a `provider` option pick their provider from `VOYAGE_CLOUD_PROVIDER`
+ * (see `env-provider.ts`), so code that builds its own client — such as a LangChain or LlamaIndex
+ * integration — reaches a cloud provider unchanged.
  */
 
 export type { AwsDeps, SageMakerSigner } from "./aws/awsDeps.js";
@@ -24,7 +24,6 @@ export { SageMakerProvider, sagemakerProvider } from "./aws/provider.js";
 export type { SageMakerDiscovery } from "./aws/resolver.js";
 export { normalizeName, SageMakerEndpointResolver } from "./aws/resolver.js";
 export { sageMakerResponseHandler } from "./aws/responses.js";
-export { getDefaultProvider, PROVIDER_ENV_VAR, providerFromEnv, setDefaultProvider } from "./default-provider.js";
 export {
     CONTEXTUALIZED_RESPONSE_KEYS,
     EMBED_RESPONSE_KEYS,

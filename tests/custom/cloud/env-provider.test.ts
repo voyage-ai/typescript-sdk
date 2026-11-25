@@ -1,24 +1,20 @@
 /**
- * Ambient provider configuration: `VOYAGE_CLOUD_PROVIDER`, `setDefaultProvider`, and how a client
- * constructed without a `provider` option picks between them. No AWS calls are made.
+ * Provider selection from `VOYAGE_CLOUD_PROVIDER` for clients constructed without a `provider`
+ * option. No AWS calls are made.
  */
 
 import { afterEach, describe, expect, test, vi } from "vitest";
-import {
-    getDefaultProvider,
-    type Provider,
-    providerFromEnv,
-    SageMakerProvider,
-    setDefaultProvider,
-    VoyageAIClient,
-} from "../../../src/extended/index";
-
-const fakeProvider = (name: string): Provider => ({ name, resolve: async () => undefined });
+import { providerFromEnv } from "../../../src/cloud/env-provider";
+import { type Provider, SageMakerProvider, VoyageAIClient } from "../../../src/extended/index";
 
 afterEach(() => {
-    setDefaultProvider(undefined);
     vi.unstubAllEnvs();
 });
+
+function stubAws(region = "us-east-1"): void {
+    vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
+    vi.stubEnv("AWS_REGION", region);
+}
 
 describe("providerFromEnv", () => {
     test("unset, blank and 'voyage' mean the Voyage API", () => {
@@ -52,23 +48,21 @@ describe("providerFromEnv", () => {
 });
 
 describe("client provider selection", () => {
-    test("without any configuration a client uses the Voyage API", () => {
+    test("without VOYAGE_CLOUD_PROVIDER a client uses the Voyage API", () => {
         expect(new VoyageAIClient({ apiKey: "key" }).provider).toBeUndefined();
     });
 
-    test("VOYAGE_CLOUD_PROVIDER alone routes new clients to the provider", () => {
-        vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
-        vi.stubEnv("AWS_REGION", "us-east-1");
+    test("VOYAGE_CLOUD_PROVIDER=aws routes new clients to SageMaker", () => {
+        stubAws();
         expect(new VoyageAIClient().provider).toBeInstanceOf(SageMakerProvider);
     });
 
     test("clients built from the same environment share one provider (one discovery cache)", () => {
-        vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
-        vi.stubEnv("AWS_REGION", "us-east-1");
+        stubAws();
         const first = new VoyageAIClient().provider;
         expect(new VoyageAIClient().provider).toBe(first);
 
-        vi.stubEnv("AWS_REGION", "us-west-2");
+        stubAws("us-west-2");
         const other = new VoyageAIClient().provider as SageMakerProvider;
         expect(other).not.toBe(first);
         expect(other.config.region).toBe("us-west-2");
@@ -81,46 +75,16 @@ describe("client provider selection", () => {
         expect(() => new VoyageAIClient()).toThrow(/requires a region/);
     });
 
-    test("setDefaultProvider beats the environment; an explicit provider beats both", () => {
-        vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
-        vi.stubEnv("AWS_REGION", "us-east-1");
-        const ambient = fakeProvider("ambient");
-        const explicit = fakeProvider("explicit");
-        setDefaultProvider(ambient);
-
-        expect(new VoyageAIClient().provider).toBe(ambient);
+    test("an explicit provider option wins over the environment", () => {
+        stubAws();
+        const explicit: Provider = { name: "explicit", resolve: async () => undefined };
         expect(new VoyageAIClient({ provider: explicit }).provider).toBe(explicit);
-        expect(getDefaultProvider()).toBe(ambient);
     });
 
-    test("provider: null pins a client to the Voyage API", () => {
-        setDefaultProvider(fakeProvider("ambient"));
-        expect(new VoyageAIClient({ provider: null }).provider).toBeUndefined();
-    });
-
-    test("setDefaultProvider(null) pins new clients to the Voyage API, undefined restores the environment", () => {
-        vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
-        vi.stubEnv("AWS_REGION", "us-east-1");
-
-        setDefaultProvider(null);
-        expect(new VoyageAIClient().provider).toBeUndefined();
-
-        setDefaultProvider(undefined);
-        expect(new VoyageAIClient().provider).toBeInstanceOf(SageMakerProvider);
-    });
-
-    test("the provider is picked at construction; later defaults leave existing clients alone", () => {
+    test("the environment is read at construction", () => {
         const before = new VoyageAIClient({ apiKey: "key" });
-        setDefaultProvider(fakeProvider("later"));
+        stubAws();
         expect(before.provider).toBeUndefined();
-        expect(new VoyageAIClient().provider?.name).toBe("later");
-    });
-
-    test("a second copy of the module (e.g. the other of the CJS/ESM builds) sees the same default", async () => {
-        const ambient = fakeProvider("ambient");
-        setDefaultProvider(ambient);
-        vi.resetModules();
-        const copy = await import("../../../src/cloud/default-provider");
-        expect(copy.getDefaultProvider()).toBe(ambient);
+        expect(new VoyageAIClient().provider).toBeInstanceOf(SageMakerProvider);
     });
 });

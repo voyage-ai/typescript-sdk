@@ -1,37 +1,48 @@
 /**
- * Integrations reaching a cloud provider without changes.
+ * Integrations reaching a cloud provider without any change: the provider is chosen inside the
+ * SDK from `VOYAGE_CLOUD_PROVIDER`, and nothing about it is visible to integration code.
  *
  * The two classes below stand in for real integrations. `LlamaIndexStyleEmbedding` is a faithful
  * copy of what `@llamaindex/voyage-ai` does today (builds `new VoyageAIClient({ apiKey })` itself,
  * with `apiKey` defaulting to `""`). `LangChainStyleEmbeddings` is what `@langchain/community`'s
- * `VoyageEmbeddings` would look like after moving from its own `fetch` calls to this SDK: it passes
- * the key through, lets the SDK validate it, and optionally accepts a ready-made client.
+ * `VoyageEmbeddings` would look like on top of this SDK instead of its own `fetch` calls.
  *
- * Neither class knows about providers. The application picks the backend with
- * `setDefaultProvider(...)` or `VOYAGE_CLOUD_PROVIDER`, or hands in a `SageMakerVoyageAIClient`.
+ * The AWS SDK is not installed here, so its loader is replaced with stand-ins: a signer, and an
+ * account with two endpoints tagged `voyageai:model=voyage-3` and `voyageai:model=voyage-3.5`.
  */
 
 import { afterEach, describe, expect, test, vi } from "vitest";
-import type { AwsDeps } from "../../../src/cloud/aws/awsDeps";
-import {
-    AwsDependencyError,
-    ProviderResolutionError,
-    SageMakerVoyageAIClient,
-    sagemakerProvider,
-    setDefaultProvider,
-    VoyageAIClient,
-} from "../../../src/extended/index";
+import { ProviderResolutionError, VoyageAIClient } from "../../../src/extended/index";
+
+vi.mock("../../../src/cloud/aws/awsDeps", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../../src/cloud/aws/awsDeps")>();
+    const tags: Record<string, string> = { "ep-voyage-3": "voyage-3", "ep-voyage-3-5": "voyage-3.5" };
+    return {
+        ...original,
+        loadAwsDeps: async () => ({
+            createSigner: () => ({
+                async sign({ headers }: { headers: Record<string, string> }) {
+                    return { ...headers, authorization: "AWS4-HMAC-SHA256 fake" };
+                },
+            }),
+            createDiscovery: () => ({
+                listInServiceEndpointNames: async () => Object.keys(tags),
+                getEndpointProductId: async () => undefined,
+                getEndpointModelTag: async (endpointName: string) => tags[endpointName],
+            }),
+        }),
+    };
+});
 
 /** As in @llamaindex/voyage-ai: the client is created in the constructor from an optional key. */
 class LlamaIndexStyleEmbedding {
     private readonly client: VoyageAIClient;
+    private readonly model: string;
 
     constructor(init?: { apiKey?: string; model?: string }) {
         this.model = init?.model ?? "voyage-3";
         this.client = new VoyageAIClient({ apiKey: init?.apiKey ?? process.env.VOYAGE_API_TOKEN ?? "" });
     }
-
-    private readonly model: string;
 
     async getTextEmbedding(text: string): Promise<number[]> {
         const response = await this.client.embed({ model: this.model, input: [text], truncation: true });
@@ -39,16 +50,15 @@ class LlamaIndexStyleEmbedding {
     }
 }
 
-/** A LangChain-style integration on top of this SDK, with an optional client injection point. */
+/** A LangChain-style integration on top of this SDK: it passes the key through and nothing else. */
 class LangChainStyleEmbeddings {
     private readonly client: VoyageAIClient;
-
-    constructor(fields: { apiKey?: string; model?: string; client?: VoyageAIClient } = {}) {
-        this.model = fields.model ?? "voyage-3.5";
-        this.client = fields.client ?? new VoyageAIClient({ apiKey: fields.apiKey });
-    }
-
     private readonly model: string;
+
+    constructor(fields: { apiKey?: string; model?: string } = {}) {
+        this.model = fields.model ?? "voyage-3.5";
+        this.client = new VoyageAIClient({ apiKey: fields.apiKey });
+    }
 
     async embedQuery(text: string): Promise<number[]> {
         const response = await this.client.embed({ model: this.model, input: text, inputType: "query" });
@@ -81,33 +91,27 @@ function stubFetch(): Call[] {
     return calls;
 }
 
-/** AWS SDK stand-ins: a signer, and discovery that finds no endpoint (an explicit endpointMap is used). */
-function fakeAwsDeps(): AwsDeps {
-    return {
-        createSigner: () => ({
-            async sign({ headers }) {
-                return { ...headers, authorization: "AWS4-HMAC-SHA256 fake" };
-            },
-        }),
-        createDiscovery: () => ({
-            listInServiceEndpointNames: async () => [],
-            getEndpointProductId: async () => undefined,
-            getEndpointModelTag: async () => undefined,
-        }),
-    };
+function stubVoyageCloudProvider(): void {
+    vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
+    vi.stubEnv("AWS_REGION", "us-east-1");
+}
+
+function stubNoVoyageKey(): void {
+    vi.stubEnv("VOYAGE_API_KEY", undefined as unknown as string);
+    vi.stubEnv("VOYAGE_API_TOKEN", undefined as unknown as string);
 }
 
 const SAGEMAKER_URL = "https://runtime.sagemaker.us-east-1.amazonaws.com/endpoints";
+const SIGNED = "AWS4-HMAC-SHA256 fake";
 
 afterEach(() => {
-    setDefaultProvider(undefined);
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
 
-describe("integrations without any cloud configuration", () => {
-    test("keep calling the Voyage API exactly as before", async () => {
+describe("without VOYAGE_CLOUD_PROVIDER", () => {
+    test("integrations keep calling the Voyage API exactly as before", async () => {
         const calls = stubFetch();
         await new LlamaIndexStyleEmbedding({ apiKey: "pa-key" }).getTextEmbedding("hi");
         await new LangChainStyleEmbeddings({ apiKey: "pa-key" }).embedQuery("hi");
@@ -119,79 +123,40 @@ describe("integrations without any cloud configuration", () => {
     });
 });
 
-describe("setDefaultProvider: one line at application startup", () => {
-    test("routes unchanged integrations to SageMaker, with no Voyage API key at all", async () => {
-        vi.stubEnv("VOYAGE_API_KEY", undefined as unknown as string);
-        vi.stubEnv("VOYAGE_API_TOKEN", undefined as unknown as string);
+describe("with VOYAGE_CLOUD_PROVIDER=aws", () => {
+    test("unchanged integrations go to the SageMaker endpoints discovery finds, with no Voyage API key", async () => {
+        stubVoyageCloudProvider();
+        stubNoVoyageKey();
         const calls = stubFetch();
 
-        // Application code:
-        setDefaultProvider(
-            sagemakerProvider(
-                { region: "us-east-1", endpointMap: { "voyage-3": "ep-v3", "voyage-3.5": "ep-v35" } },
-                { depsLoader: async () => fakeAwsDeps() },
-            ),
-        );
-
-        // Integration code, unchanged:
         expect(await new LlamaIndexStyleEmbedding().getTextEmbedding("hi")).toEqual([0.1, 0.2]);
         expect(await new LangChainStyleEmbeddings().embedQuery("hi")).toEqual([0.1, 0.2]);
 
         expect(calls).toEqual([
-            { url: `${SAGEMAKER_URL}/ep-v3/invocations`, authorization: "AWS4-HMAC-SHA256 fake" },
-            { url: `${SAGEMAKER_URL}/ep-v35/invocations`, authorization: "AWS4-HMAC-SHA256 fake" },
+            { url: `${SAGEMAKER_URL}/ep-voyage-3/invocations`, authorization: SIGNED },
+            { url: `${SAGEMAKER_URL}/ep-voyage-3-5/invocations`, authorization: SIGNED },
         ]);
     });
 
     test("a model with no endpoint and no Voyage API key reports the resolution error, not a 401", async () => {
-        vi.stubEnv("VOYAGE_API_KEY", undefined as unknown as string);
-        vi.stubEnv("VOYAGE_API_TOKEN", undefined as unknown as string);
+        stubVoyageCloudProvider();
+        stubNoVoyageKey();
         const calls = stubFetch();
-        setDefaultProvider(sagemakerProvider({ region: "us-east-1" }, { depsLoader: async () => fakeAwsDeps() }));
 
         // The integration passes apiKey: "" — that must not count as a key and trigger the API fallback.
-        await expect(new LlamaIndexStyleEmbedding().getTextEmbedding("hi")).rejects.toBeInstanceOf(
-            ProviderResolutionError,
-        );
+        await expect(
+            new LlamaIndexStyleEmbedding({ model: "voyage-code-3" }).getTextEmbedding("hi"),
+        ).rejects.toBeInstanceOf(ProviderResolutionError);
         expect(calls).toEqual([]);
     });
 
-    test("with a Voyage API key, models without an endpoint fall back to the API", async () => {
+    test("with a Voyage API key, a model with no endpoint falls back to the API", async () => {
+        stubVoyageCloudProvider();
         vi.spyOn(process, "emitWarning").mockImplementation(() => {});
         const calls = stubFetch();
-        setDefaultProvider(sagemakerProvider({ region: "us-east-1" }, { depsLoader: async () => fakeAwsDeps() }));
 
-        await new LlamaIndexStyleEmbedding({ apiKey: "pa-key" }).getTextEmbedding("hi");
+        await new LlamaIndexStyleEmbedding({ apiKey: "pa-key", model: "voyage-code-3" }).getTextEmbedding("hi");
 
         expect(calls).toEqual([{ url: "https://api.voyageai.com/v1/embeddings", authorization: "Bearer pa-key" }]);
-    });
-});
-
-describe("VOYAGE_CLOUD_PROVIDER: no code at all", () => {
-    test("routes an unchanged integration to SageMaker", async () => {
-        vi.stubEnv("VOYAGE_CLOUD_PROVIDER", "aws");
-        vi.stubEnv("AWS_REGION", "us-east-1");
-        const calls = stubFetch();
-
-        // The AWS SDK is not installed in this repository, so reaching the SageMaker path shows up as
-        // the install hint — proof that the call went to SageMaker, not to the Voyage API.
-        await expect(new LlamaIndexStyleEmbedding({ apiKey: "pa-key" }).getTextEmbedding("hi")).rejects.toBeInstanceOf(
-            AwsDependencyError,
-        );
-        expect(calls).toEqual([]);
-    });
-});
-
-describe("explicit client injection", () => {
-    test("an integration that accepts a client takes a SageMakerVoyageAIClient as is", async () => {
-        const calls = stubFetch();
-        const client = new SageMakerVoyageAIClient(
-            { region: "us-east-1", endpointMap: { "voyage-3.5": "ep-v35" } },
-            { depsLoader: async () => fakeAwsDeps() },
-        );
-
-        await new LangChainStyleEmbeddings({ client }).embedQuery("hi");
-
-        expect(calls).toEqual([{ url: `${SAGEMAKER_URL}/ep-v35/invocations`, authorization: "AWS4-HMAC-SHA256 fake" }]);
     });
 });
