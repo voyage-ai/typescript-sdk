@@ -21,7 +21,7 @@ function jsonResponse(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
-/** Deps for a solve-by-endpointMap configuration: discovery is never reached. */
+/** Deps whose account has one endpoint, `ep-a`, tagged `voyageai:model=voyage-3`. */
 function signingDeps(): AwsDeps {
     return {
         createSigner: () => ({
@@ -31,13 +31,13 @@ function signingDeps(): AwsDeps {
         }),
         createDiscovery: () => ({
             async listInServiceEndpointNames() {
-                return [];
+                return ["ep-a"];
             },
             async getEndpointProductId() {
                 return undefined;
             },
             async getEndpointModelTag() {
-                return undefined;
+                return "voyage-3";
             },
         }),
     };
@@ -49,7 +49,6 @@ describe("SageMakerVoyageAIClient", () => {
         const client = new SageMakerVoyageAIClient(
             {
                 region: "eu-west-1",
-                endpointMap: { "voyage-3": "ep-a" },
                 awsAccessKeyId: "AKIA",
                 awsSecretAccessKey: "secret",
                 apiKey: "key",
@@ -65,7 +64,6 @@ describe("SageMakerVoyageAIClient", () => {
         expect(provider).toBeInstanceOf(SageMakerProvider);
         expect((provider as SageMakerProvider).config).toMatchObject({
             region: "eu-west-1",
-            endpointMap: { "voyage-3": "ep-a" },
             credentials: { type: "static", accessKeyId: "AKIA", secretAccessKey: "secret" },
         });
 

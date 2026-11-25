@@ -1,5 +1,5 @@
 /**
- * Endpoint resolution algorithm: explicit override, ProductId discovery,
+ * Endpoint resolution algorithm: ProductId discovery,
  * skipping of unknown/absent ProductIds, tag/name tie-breaks, ambiguity, auth-error
  * propagation, and caching. Uses a fake discovery so there is no AWS dependency or network.
  */
@@ -8,9 +8,7 @@ import type { SageMakerConfig } from "../../../src/cloud/aws/config";
 import { normalizeName, type SageMakerDiscovery, SageMakerEndpointResolver } from "../../../src/cloud/aws/resolver";
 import { ProviderResolutionError } from "../../../src/cloud/providers";
 
-function config(endpointMap: Record<string, string> = {}): SageMakerConfig {
-    return { region: "us-east-1", endpointMap, credentials: { type: "default" } };
-}
+const CONFIG: SageMakerConfig = { region: "us-east-1", credentials: { type: "default" } };
 
 // Fake product map keyed off the same shape as the real one: ProductId -> model name.
 const PRODUCT_MAP: Readonly<Record<string, string>> = {
@@ -42,8 +40,8 @@ class FakeDiscovery implements SageMakerDiscovery {
     }
 }
 
-function resolver(discovery: SageMakerDiscovery, endpointMap: Record<string, string> = {}): SageMakerEndpointResolver {
-    return new SageMakerEndpointResolver(config(endpointMap), discovery, PRODUCT_MAP);
+function resolver(discovery: SageMakerDiscovery): SageMakerEndpointResolver {
+    return new SageMakerEndpointResolver(CONFIG, discovery, PRODUCT_MAP);
 }
 
 describe("normalizeName", () => {
@@ -53,13 +51,6 @@ describe("normalizeName", () => {
 });
 
 describe("SageMakerEndpointResolver", () => {
-    test("T1 explicit map override wins, no AWS call", async () => {
-        const discovery = new FakeDiscovery([]);
-        const r = resolver(discovery, { "voyage-4-lite": "my-ep" });
-        expect(await r.resolve("voyage-4-lite")).toBe("my-ep");
-        expect(discovery.listCalls).toBe(0);
-    });
-
     test("single discovery candidate by ProductId", async () => {
         const discovery = new FakeDiscovery([
             { name: "ep-a", productId: "prod-lite" },
@@ -95,6 +86,7 @@ describe("SageMakerEndpointResolver", () => {
         expect(error).toBeInstanceOf(ProviderResolutionError);
         expect(error?.kind).toBe("invalid_request");
         expect(error?.message).toMatch(/No SageMaker endpoint found/);
+        expect(error?.message).toContain("Tag the endpoint with voyageai:model=voyage-4-lite.");
     });
 
     test("multiple candidates without a tie-break throw an ambiguity error", async () => {
@@ -105,6 +97,9 @@ describe("SageMakerEndpointResolver", () => {
         const r = resolver(discovery);
         await expect(r.resolve("voyage-4-lite")).rejects.toBeInstanceOf(ProviderResolutionError);
         await expect(r.resolve("voyage-4-lite")).rejects.toThrow(/Multiple SageMaker endpoints/);
+        await expect(r.resolve("voyage-4-lite")).rejects.toThrow(
+            /Tag exactly one of them with voyageai:model=voyage-4-lite\./,
+        );
     });
 
     test("tie-break 1: exactly one of multiple candidates carries the voyageai:model tag", async () => {

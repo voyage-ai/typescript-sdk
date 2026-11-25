@@ -12,8 +12,8 @@
  *
  * This provider NEVER declines silently: a model it cannot place
  * raises a `ProviderResolutionError` (the client decides between API fallback and
- * propagation). A SageMaker user has deployed — and pays for — specific endpoints; a typo'd
- * `endpointMap` silently billing the hosted API instead would hide real misconfiguration.
+ * propagation). A SageMaker user has deployed — and pays for — specific endpoints; a mistagged
+ * endpoint silently billing the hosted API instead would hide real misconfiguration.
  */
 
 import type { AuthStrategy, Provider, Transport } from "../providers.js";

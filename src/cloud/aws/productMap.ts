@@ -13,8 +13,8 @@
  *
  * A ProductId that is absent here is treated as "not a recognized public Voyage listing"
  * and is skipped during discovery (never guessed) — self-built packages (no ProductId) and
- * internal/non-public listings fall into this bucket and must be addressed with an explicit
- * `endpointMap` override or the `voyageai:model` endpoint tag.
+ * internal/non-public listings fall into this bucket and must be addressed with the
+ * `voyageai:model` endpoint tag.
  *
  * NOTE: once the serving containers report their identity via the
  * `X-Amzn-SageMaker-Custom-Attributes` response header, this table and the

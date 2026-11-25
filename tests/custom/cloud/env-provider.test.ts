@@ -28,7 +28,6 @@ describe("providerFromEnv", () => {
         expect(provider).toBeInstanceOf(SageMakerProvider);
         expect((provider as SageMakerProvider).config).toEqual({
             region: "eu-west-1",
-            endpointMap: {},
             credentials: { type: "default" },
         });
     });

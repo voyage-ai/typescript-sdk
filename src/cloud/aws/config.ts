@@ -1,7 +1,8 @@
 /**
  * AWS SageMaker configuration parsing and validation.
  *
- * Kept in lockstep with the Python SDK's `voyageai_cloud.aws` config: the options passed to
+ * Follows the Python SDK's `voyageai_cloud.aws` config, minus its explicit model-to-endpoint map:
+ * endpoints are found by discovery or the `voyageai:model` endpoint tag only. The options passed to
  * `sagemakerProvider` are parsed exactly once, when the provider is built, into a frozen
  * `SageMakerConfig`; `region` may fall back to the standard AWS environment. All validation
  * errors are raised there, never at first call. Credential *resolution* (finding the actual
@@ -12,8 +13,6 @@
 export interface SageMakerOptions {
     /** AWS region of the endpoints. Falls back to `AWS_REGION` / `AWS_DEFAULT_REGION`. */
     region?: string;
-    /** Explicit `model name -> endpoint name` overrides. Highest-priority resolution tier. */
-    endpointMap?: Record<string, string>;
     /** Explicit static credentials. */
     awsAccessKeyId?: string;
     /** Must be present iff `awsAccessKeyId` is present. */
@@ -38,13 +37,11 @@ export type SageMakerCredentialSource =
 /** Frozen, validated SageMaker configuration. */
 export interface SageMakerConfig {
     readonly region: string;
-    readonly endpointMap: Readonly<Record<string, string>>;
     readonly credentials: SageMakerCredentialSource;
 }
 
 const ALLOWED_KEYS: readonly string[] = [
     "region",
-    "endpointMap",
     "awsAccessKeyId",
     "awsSecretAccessKey",
     "awsSessionToken",
@@ -116,7 +113,6 @@ export function parseSageMakerOptions(
 
     const region = resolveRegion(options.region, env);
     const credentials = buildCredentialSource(options);
-    const endpointMap: Record<string, string> = { ...(options.endpointMap ?? {}) };
 
-    return Object.freeze({ region, endpointMap: Object.freeze(endpointMap), credentials });
+    return Object.freeze({ region, credentials });
 }
