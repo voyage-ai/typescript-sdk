@@ -228,9 +228,7 @@ export async function loadAwsDeps(): Promise<AwsDeps> {
                     throw new ProviderResolutionError(
                         `AWS credentials lack permission for SageMaker endpoint discovery (${action}). ` +
                             "Grant sagemaker:ListEndpoints, DescribeEndpoint, DescribeEndpointConfig, DescribeModel, " +
-                            "DescribeModelPackage, and ListTags (in addition to sagemaker:InvokeEndpoint), or bypass " +
-                            "discovery entirely by providing an explicit endpointMap (which needs only " +
-                            "sagemaker:InvokeEndpoint).",
+                            "DescribeModelPackage, and ListTags (in addition to sagemaker:InvokeEndpoint).",
                         "authentication",
                     );
                 }

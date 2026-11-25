@@ -4,15 +4,14 @@
  * Auto-discovery is the DEFAULT mechanism. With only region + credentials configured,
  * `resolve(model)` inspects the account's InService endpoints and identifies each one by the
  * Marketplace `ProductId` embedded in its model package, mapping that ProductId to a
- * canonical Voyage model name via the product map. The explicit `endpointMap` is an optional
- * override consulted only for models the user listed.
+ * canonical Voyage model name via the product map.
  *
  * Tie-breaks (both for multiple candidates and for zero candidates, per the spec): a
  * `voyageai:model` endpoint tag first, then an endpoint name equal to `normalize(model)`.
  *
  * Endpoints whose ProductId is absent (self-built packages) or unrecognized (not a public
- * Voyage listing) are SKIPPED, never guessed: they are reachable via `endpointMap` or the
- * tag fallback. When a discovery control-plane call is denied by IAM, the discovery raises a
+ * Voyage listing) are SKIPPED, never guessed: they are reachable via the tag or name
+ * fallback. When a discovery control-plane call is denied by IAM, the discovery raises a
  * `ProviderResolutionError` with kind `authentication` that propagates unchanged.
  */
 
@@ -78,16 +77,10 @@ export class SageMakerEndpointResolver {
     }
 
     private async resolveUncached(model: string): Promise<string> {
-        // T1 — explicit override (exact, non-normalized key match). No AWS call.
-        const override = this.config.endpointMap[model];
-        if (override !== undefined) {
-            return override;
-        }
-
         const normModel = normalizeName(model);
         const allEndpoints = await this.discovery.listInServiceEndpointNames();
 
-        // T2 — discovery (default path). Identify each endpoint by its Marketplace ProductId
+        // Discovery. Identify each endpoint by its Marketplace ProductId
         // and map that to a canonical model name; keep the endpoints whose model matches.
         // Unknown / absent ProductIds are skipped (never guessed).
         const candidates: string[] = [];
@@ -143,9 +136,8 @@ export class SageMakerEndpointResolver {
         return new ProviderResolutionError(
             `No SageMaker endpoint found for model '${model}' in region '${this.config.region}'. ` +
                 `InService endpoints checked: ${sorted}. The endpoint may serve a model that is not a ` +
-                "recognized public Voyage listing (e.g. a self-built or internal package). Provide an " +
-                `explicit mapping via endpointMap={'${model}': '<endpoint-name>'}, or tag the endpoint ` +
-                `with voyageai:model=${model}.`,
+                "recognized public Voyage listing (e.g. a self-built or internal package). Tag the " +
+                `endpoint with voyageai:model=${model}.`,
             "invalid_request",
         );
     }
@@ -154,8 +146,7 @@ export class SageMakerEndpointResolver {
         const sorted = JSON.stringify([...candidates].sort());
         return new ProviderResolutionError(
             `Multiple SageMaker endpoints serve model '${model}' in region '${this.config.region}': ${sorted}. ` +
-                `Disambiguate with an explicit endpointMap={'${model}': '<endpoint-name>'} entry, or tag ` +
-                `exactly one endpoint with voyageai:model=${model}.`,
+                `Tag exactly one of them with voyageai:model=${model}.`,
             "invalid_request",
         );
     }

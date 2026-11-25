@@ -29,19 +29,11 @@ export type SageMakerClientOptions = SageMakerOptions & Omit<VoyageAIClientOptio
  */
 export class SageMakerVoyageAIClient extends VoyageAIClient {
     constructor(options: SageMakerClientOptions = {}, internals?: SageMakerProviderInternals) {
-        const {
-            region,
-            endpointMap,
-            awsAccessKeyId,
-            awsSecretAccessKey,
-            awsSessionToken,
-            profileName,
-            ...clientOptions
-        } = options;
+        const { region, awsAccessKeyId, awsSecretAccessKey, awsSessionToken, profileName, ...clientOptions } = options;
         super({
             ...clientOptions,
             provider: sagemakerProvider(
-                { region, endpointMap, awsAccessKeyId, awsSecretAccessKey, awsSessionToken, profileName },
+                { region, awsAccessKeyId, awsSecretAccessKey, awsSessionToken, profileName },
                 internals,
             ),
         });

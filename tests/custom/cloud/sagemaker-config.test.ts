@@ -11,7 +11,6 @@ describe("parseSageMakerOptions", () => {
         const config = parseSageMakerOptions({}, { AWS_REGION: "us-east-1" });
         expect(config.region).toBe("us-east-1");
         expect(config.credentials).toEqual({ type: "default" });
-        expect(config.endpointMap).toEqual({});
     });
 
     test("explicit region beats env", () => {
@@ -31,6 +30,13 @@ describe("parseSageMakerOptions", () => {
     test("unknown key throws", () => {
         // @ts-expect-error intentionally invalid key
         expect(() => parseSageMakerOptions({ region: "us-east-1", bogus: 1 }, {})).toThrow(/unknown option/);
+    });
+
+    test("there is no endpoint map option: endpoints come from discovery or the voyageai:model tag", () => {
+        // @ts-expect-error endpointMap is not an option
+        expect(() => parseSageMakerOptions({ region: "us-east-1", endpointMap: { "voyage-3": "ep-a" } }, {})).toThrow(
+            /unknown option\(s\) \["endpointMap"\]/,
+        );
     });
 
     test("static credentials", () => {
@@ -75,7 +81,6 @@ describe("parseSageMakerOptions", () => {
     test("config is frozen", () => {
         const config = parseSageMakerOptions({ region: "us-east-1" }, {});
         expect(Object.isFrozen(config)).toBe(true);
-        expect(Object.isFrozen(config.endpointMap)).toBe(true);
     });
 });
 
@@ -92,6 +97,6 @@ describe("process.env defaults", () => {
     test("the retired VOYAGE_SAGEMAKER_ENDPOINT_MAP variable is ignored", () => {
         vi.stubEnv("AWS_REGION", "us-east-1");
         vi.stubEnv("VOYAGE_SAGEMAKER_ENDPOINT_MAP", "voyage-3=ep-a");
-        expect(parseSageMakerOptions({}).endpointMap).toEqual({});
+        expect(parseSageMakerOptions({})).toEqual({ region: "us-east-1", credentials: { type: "default" } });
     });
 });

@@ -116,7 +116,6 @@ describe("SageMaker provider activation", () => {
         const provider = sagemakerProvider();
         expect(provider.name).toBe("aws");
         expect(provider.config.region).toBe("eu-west-1");
-        expect(provider.config.endpointMap).toEqual({});
         expect(provider.config.credentials).toEqual({ type: "default" });
     });
 });
@@ -308,12 +307,13 @@ describe("SageMaker provider internals", () => {
     test("an undefined body is signed as an empty string", async () => {
         const sign = vi.fn(async ({ headers }: { headers: Record<string, string>; body: string }) => headers);
         const provider = sagemakerProvider(
-            { region: "us-east-1", endpointMap: { "voyage-3": "ep-a" } },
+            { region: "us-east-1" },
             {
                 depsLoader: async () => ({
                     createSigner: () => ({ sign }),
-                    createDiscovery: depsNoCandidate().createDiscovery,
+                    createDiscovery: depsResolving("ep-a", "voyage-3").createDiscovery,
                 }),
+                productMap: PRODUCT_MAP,
             },
         );
         const transport = await provider.resolve("voyage-3");
@@ -323,8 +323,7 @@ describe("SageMaker provider internals", () => {
 
     test("construction without internals reads process.env for the region", () => {
         vi.stubEnv("AWS_REGION", "ca-central-1");
-        expect(new SageMakerProvider().config.region).toBe("ca-central-1");
-        expect(new SageMakerProvider().config.endpointMap).toEqual({});
+        expect(new SageMakerProvider().config).toEqual({ region: "ca-central-1", credentials: { type: "default" } });
     });
 
     test("the response handler is bound to the resolved model's family", async () => {
